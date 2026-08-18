@@ -296,7 +296,15 @@
     background: var(--surface);
   }
   .miller[hidden] { display: none !important; }
-  .mcol { border-right: 1px solid var(--line); min-height: 190px; max-height: 260px; overflow-y: auto; }
+  .mcol { border-right: 1px solid var(--line); min-height: 200px; max-height: 340px; overflow-y: auto;
+          scrollbar-width: thin; scrollbar-color: var(--line-hi) transparent; }
+  .mcol::-webkit-scrollbar { width: 10px; }
+  .mcol::-webkit-scrollbar-thumb { background: var(--line-hi); border-radius: 5px;
+                                   border: 3px solid var(--surface); }
+  .menu { scrollbar-width: thin; scrollbar-color: var(--line-hi) transparent; }
+  .menu::-webkit-scrollbar { width: 10px; }
+  .menu::-webkit-scrollbar-thumb { background: var(--line-hi); border-radius: 5px;
+                                   border: 3px solid var(--surface); }
   .mcol:last-child { border-right: 0; }
   .mcol-head {
     font-size: 10.5px;
@@ -370,7 +378,7 @@
     .grid2 { grid-template-columns: 104px minmax(0, 1fr); }
     .grid2 > .span { grid-column: 2 / -1; }
     .miller { grid-template-columns: 1fr; }
-    .mcol { max-height: 150px; }
+    .mcol { max-height: 240px; }
   }
 
 
@@ -404,7 +412,8 @@
   .chart .bar.dim { fill: var(--line-hi); }
   .chart .grid { stroke: var(--line); stroke-width: 1; }
 
-  .hms input[type="number"] { width: 62px; }
+  .hms input[type="number"] { width: 62px; flex: none; }
+  .hms button, .row button { white-space: nowrap; }
   .hms .u { font-size: 12px; color: var(--muted); margin: 0 8px 0 -2px; }
 
   /* ---------- top bar ---------- */
@@ -932,12 +941,18 @@
           <div class="full" id="dupe-hint" hidden></div>
 
           <label for="f-company">Företag</label>
-          <input type="text" id="f-company" list="l-company" autocomplete="off">
-          <datalist id="l-company"></datalist>
+          <div class="combo">
+            <input type="text" id="f-company" autocomplete="off" spellcheck="false"
+                   placeholder="Skriv för att söka bland kunder">
+            <button type="button" id="btn-addcompany" title="Registrera företaget">+</button>
+            <div class="menu" id="company-menu" hidden></div>
+          </div>
 
           <label for="f-installer">Montör</label>
-          <input type="text" id="f-installer" list="l-installer" autocomplete="off">
-          <datalist id="l-installer"></datalist>
+          <div class="combo">
+            <input type="text" id="f-installer" autocomplete="off" spellcheck="false">
+            <div class="menu" id="installer-menu" hidden></div>
+          </div>
 
           <label>Teknikernivå</label>
           <div class="span" style="display:flex;align-items:center">
@@ -1081,12 +1096,16 @@
       <input type="text" id="a-model" autocomplete="off" placeholder="t.ex. E124S">
 
       <label for="a-brand">Fabrikat</label>
-      <input type="text" id="a-brand" list="l-brand" autocomplete="off" placeholder="DAAB, FAAC, Magnetic…">
-      <datalist id="l-brand"></datalist>
+      <div class="combo">
+        <input type="text" id="a-brand" autocomplete="off" placeholder="DAAB, FAAC, Magnetic…">
+        <div class="menu" id="brand-menu" hidden></div>
+      </div>
 
       <label for="a-cat">Kategori</label>
-      <input type="text" id="a-cat" list="l-cat" autocomplete="off" placeholder="Styrautomatiker…">
-      <datalist id="l-cat"></datalist>
+      <div class="combo">
+        <input type="text" id="a-cat" autocomplete="off" placeholder="Styrautomatiker…">
+        <div class="menu" id="cat-menu" hidden></div>
+      </div>
     </div>
     <p class="hint">
       Skriv ett nytt fabrikat eller en ny kategori för att skapa den — listorna är
@@ -1340,6 +1359,8 @@ async function readEveryone() {
         products: Array.isArray(data.products) ? data.products : [],
         brands: Array.isArray(data.brands) ? data.brands : [],
         cats: Array.isArray(data.cats) ? data.cats : [],
+        companies: Array.isArray(data.companies) ? data.companies : [],
+        installers: Array.isArray(data.installers) ? data.installers : [],
         handle: entry,
       });
     } catch (e) {
@@ -1359,7 +1380,9 @@ async function writeMine() {
   try {
     await w.write(JSON.stringify(
       { name: me.name, prefix: me.prefix, products: me.products || [],
-        brands: me.brands || [], cats: me.cats || [], cases: me.cases },
+        brands: me.brands || [], cats: me.cats || [],
+        companies: me.companies || [], installers: me.installers || [],
+        cases: me.cases },
       null, 1));
   } finally {
     await w.close();   // commits the swap file; leaving it open would lose the write
@@ -1495,15 +1518,8 @@ function render() {
   $("st-open").textContent  = cases.filter((c) => statusOf(c) !== STATUS_DONE).length;
 }
 
-function refreshLists() {
-  const fill = (id, key) => {
-    const seen = [...new Set(cases.map((c) => c[key]).filter(Boolean))].sort((a, b) =>
-      a.localeCompare(b, undefined, { sensitivity: "base" }));
-    $(id).innerHTML = seen.map((v) => `<option value="${esc(v)}">`).join("");
-  };
-  fill("l-company", "company");
-  fill("l-installer", "installer");
-}
+/* Nothing to prefill any more — the comboboxes read their options live. */
+function refreshLists() {}
 
 /* ==========================================================================
    PRODUCT CATALOG
@@ -1870,8 +1886,6 @@ function openAddProduct(prefill) {
   $("a-model").value = (prefill && prefill.model) || $("f-product").value.trim();
   $("a-brand").value = (prefill && prefill.brand) || browseBrand || "";
   $("a-cat").value   = (prefill && prefill.cat) || browseCat || "";
-  $("l-brand").innerHTML = brandsInUse().map((b) => `<option value="${esc(b.name)}">`).join("");
-  $("l-cat").innerHTML = allCategories().map((c) => `<option value="${esc(c)}">`).join("");
   banner("addprod-banner", null, null);
   $("addprod").showModal();
   $("a-model").focus();
@@ -2188,6 +2202,119 @@ function renderStats() {
     </div>`;
 }
 
+
+/* ==========================================================================
+   En enkel kombobox
+   --------------------------------------------------------------------------
+   Ersätter <datalist>, som Chrome kapar till några rader och klipper av inuti
+   en <dialog> — det gick inte att skrolla fram alternativ nummer fem och nedåt.
+   Den här listan är vanlig HTML, så den skrollar som allt annat.
+   ========================================================================== */
+
+function attachCombo(inputId, menuId, optionsFn) {
+  const input = $(inputId), menu = $(menuId);
+  let items = [], idx = -1;
+
+  const paint = () => {
+    [...menu.querySelectorAll(".menu-item")].forEach((el) => {
+      const on = Number(el.dataset.i) === idx;
+      el.classList.toggle("active", on);
+      if (on) el.scrollIntoView({ block: "nearest" });
+    });
+  };
+
+  const close = () => { menu.hidden = true; items = []; idx = -1; };
+
+  const open = () => {
+    const q = norm(input.value);
+    const all = optionsFn();
+    const starts = [], contains = [];
+    for (const v of all) {
+      const n = norm(v);
+      if (!q || n.startsWith(q)) starts.push(v);
+      else if (n.includes(q)) contains.push(v);
+    }
+    const coll = (a, b) => a.localeCompare(b, "sv", { sensitivity: "base" });
+    items = [...starts.sort(coll), ...contains.sort(coll)].slice(0, 60);
+    if (!items.length) { close(); return; }
+    menu.innerHTML = items.map((v, i) =>
+      `<div class="menu-item" data-i="${i}"><span class="model">${esc(v)}</span></div>`).join("");
+    menu.hidden = false;
+    idx = -1;
+    paint();
+  };
+
+  const choose = (i) => {
+    if (items[i] == null) return;
+    input.value = items[i];
+    close();
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  };
+
+  input.addEventListener("input", open);
+  input.addEventListener("focus", open);
+  input.addEventListener("blur", () => setTimeout(close, 120));
+  input.addEventListener("keydown", (e) => {
+    if (menu.hidden) {
+      if (e.key === "ArrowDown") { e.preventDefault(); open(); }
+      return;
+    }
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      idx = (idx + (e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
+      paint();
+    } else if (e.key === "Enter" && idx >= 0) {
+      e.preventDefault(); choose(idx);
+    } else if (e.key === "Escape") {
+      e.stopPropagation(); close();
+    }
+  });
+  menu.addEventListener("mousedown", (e) => {
+    const it = e.target.closest(".menu-item");
+    if (it) { e.preventDefault(); choose(Number(it.dataset.i)); }
+  });
+}
+
+/* ---------- företag och montörer ---------- */
+
+/* Registrerade namn plus allt som redan förekommer i loggen, så listan växer
+   av sig själv men går också att fylla på i förväg. */
+function knownList(key, caseField) {
+  const out = new Set();
+  for (const p of people) for (const v of (p[key] || [])) if (v) out.add(v);
+  for (const c of cases) if (c[caseField]) out.add(c[caseField]);
+  return [...out];
+}
+
+const allCompanies = () => knownList("companies", "company");
+const allInstallers = () => knownList("installers", "installer");
+
+/** Sparar ett namn i din egen fil så alla ser det, även innan första ärendet. */
+async function registerName(key, value, what) {
+  const name = String(value || "").trim();
+  if (!name) { banner("form-banner", "warn", `Skriv ett ${what} först.`); return false; }
+  if (!me) { banner("form-banner", "warn", "Klicka på ditt namn först."); return false; }
+
+  const existing = key === "companies" ? allCompanies() : allInstallers();
+  if (existing.some((v) => norm(v) === norm(name))) {
+    banner("form-banner", "info", `${name} fanns redan.`);
+    return true;
+  }
+
+  const before = (me[key] || []).slice();
+  try {
+    me[key] = (me[key] || []).concat([name]);
+    await writeMine();
+  } catch (e) {
+    me[key] = before;
+    banner("form-banner", "error", `Kunde inte spara: ${e.message}`);
+    return false;
+  }
+  banner("form-banner", "info", `${name} registrerat.`);
+  return true;
+}
+
 /* ---------- level meter ---------- */
 
 function buildMeter() {
@@ -2412,6 +2539,14 @@ async function save() {
       `Kunde inte skriva till den delade mappen. Inget har gått förlorat — tryck Spara ärende för att försöka igen. (${e.message})`);
     $("btn-save").disabled = false;
     return;
+  }
+
+  // Saving a case is itself a registration: next time the name is in the list.
+  for (const [key, value] of [["companies", record.company], ["installers", record.installer]]) {
+    const known = key === "companies" ? allCompanies() : allInstallers();
+    if (value && !known.some((v) => norm(v) === norm(value))) {
+      me[key] = (me[key] || []).concat([value]);
+    }
   }
 
   const wasEdit = editingId != null;
@@ -2674,6 +2809,8 @@ async function addPerson() {
       products: [],
       brands: [],
       cats: [],
+      companies: [],
+      installers: [],
       handle: null,
     };
     people.push(person);
@@ -2901,6 +3038,12 @@ function init() {
     if (e.key === "Enter") { e.preventDefault(); saveNewProduct(); }
   });
 
+  attachCombo("f-company", "company-menu", allCompanies);
+  attachCombo("f-installer", "installer-menu", allInstallers);
+  attachCombo("a-brand", "brand-menu", () => brandsInUse().map((b) => b.name));
+  attachCombo("a-cat", "cat-menu", allCategories);
+  $("btn-addcompany").onclick = () => registerName("companies", $("f-company").value, "företagsnamn");
+
   $("gate-settings").onclick = openSettings;
   $("gate-add-btn").onclick  = addPerson;
   $("btn-pick").onclick      = () => (dir ? reconnectFolder() : chooseFolder());
@@ -3010,6 +3153,7 @@ window.__caselog = {
   slugify, prefixFor, readEveryone, writeMine, remerge, render, refresh,
   boot, showGate, resumeSession, formHasContent,
   allProducts, searchProducts, catsFor, modelsFor, showPane, allCategories,
+  allCompanies, allInstallers, registerName,
   brandsInUse, secondsOf, fmtTime, casesInPeriod, renderStats,
   set period(v) { period = v; }, get period() { return period; },
   get picked() { return picked; },
