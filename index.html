@@ -373,6 +373,40 @@
     .mcol { max-height: 150px; }
   }
 
+
+  /* ---------- statistik ---------- */
+
+  .statwrap { flex: 1; overflow-y: auto; padding: 4px 16px 24px; }
+
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .kpi { border: 1px solid var(--line-hi); border-radius: 4px; background: var(--surface); padding: 11px 13px; }
+  .kpi .k { font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .kpi .v { font-family: var(--mono); font-size: 24px; font-weight: 600; line-height: 1.25; }
+  .kpi .s { font-size: 12px; color: var(--muted); }
+
+  .statgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; }
+  .card { border: 1px solid var(--line-hi); border-radius: 4px; background: var(--surface); padding: 12px 14px; }
+  .card h4 { margin: 0 0 10px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .card .lead { font-size: 17px; font-weight: 650; margin-bottom: 2px; }
+  .card .lead .sub { font-weight: 400; font-size: 13px; color: var(--muted); margin-left: 6px; }
+
+  .barrow { display: grid; grid-template-columns: 1fr 62px; align-items: center; gap: 8px; margin-bottom: 5px; font-size: 13px; }
+  .barrow .lbl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .barrow .track { grid-column: 1 / -1; display: block; height: 6px; background: var(--paper);
+                   border: 1px solid var(--line); border-radius: 3px; overflow: hidden; margin-top: -2px; }
+  .barrow .fill { display: block; height: 100%; min-width: 2px; background: var(--accent); border-radius: 3px; }
+  .barrow .num { font-family: var(--mono); font-size: 12.5px; color: var(--muted); text-align: right; }
+
+  .statempty { color: var(--muted); font-size: 13px; padding: 6px 0; }
+  .chart { width: 100%; height: 120px; display: block; }
+  .ticks { display: flex; margin-top: 3px; font-family: var(--mono); font-size: 9.5px; color: var(--muted); }
+  .chart .bar { fill: var(--accent); }
+  .chart .bar.dim { fill: var(--line-hi); }
+  .chart .grid { stroke: var(--line); stroke-width: 1; }
+
+  .hms input[type="number"] { width: 62px; }
+  .hms .u { font-size: 12px; color: var(--muted); margin: 0 8px 0 -2px; }
+
   /* ---------- top bar ---------- */
 
   .bar {
@@ -480,7 +514,8 @@
     padding: 0 16px 16px;
   }
 
-  /* ---------- form ---------- */
+  
+/* ---------- form ---------- */
 
   .grid {
     display: grid;
@@ -806,30 +841,30 @@
   <div class="gate-card">
     <div class="gate-mark"><i></i><i></i><i></i><i></i></div>
     <h1>Case Log</h1>
-    <p class="sub" id="gate-sub">Who's using this?</p>
+    <p class="sub" id="gate-sub">Vem använder detta?</p>
     <div class="gate-status" id="gate-status"></div>
 
     <div id="gate-connect" hidden>
       <button class="primary" id="btn-pick" style="font-size:15px;padding:12px 22px">
-        Choose the shared folder
+        Välj den delade mappen
       </button>
       <p class="hint" style="margin-top:12px">
-        Pick the folder on your network share where the case log lives,
-        e.g. <span class="mono">\\server\support\caselog</span>
+        Välj mappen på nätverksenheten där ärendeloggen ligger,
+        t.ex. <span class="mono">\\server\support\caselog</span>
       </p>
     </div>
 
     <div id="gate-people">
       <div class="who" id="who"></div>
       <div class="gate-add">
-        <input type="text" id="gate-new" placeholder="Someone else — type a name" autocomplete="off">
-        <button id="gate-add-btn">Add</button>
+        <input type="text" id="gate-new" placeholder="Någon annan — skriv ett namn" autocomplete="off">
+        <button id="gate-add-btn">Lägg till</button>
       </div>
     </div>
 
     <div class="gate-foot">
       <span id="gate-repo"></span>
-      <button class="ghost" id="gate-settings">Shared folder</button>
+      <button class="ghost" id="gate-settings">Delad mapp</button>
     </div>
   </div>
 </div>
@@ -837,21 +872,22 @@
 <header class="bar">
   <div class="brand">Case Log <span id="whoami">—</span></div>
   <div class="stats">
-    <span>total <b id="st-total">0</b></span>
-    <span>today <b id="st-today">0</b></span>
-    <span>open <b id="st-open">0</b></span>
+    <span>totalt <b id="st-total">0</b></span>
+    <span>idag <b id="st-today">0</b></span>
+    <span>öppna <b id="st-open">0</b></span>
   </div>
   <div class="sync" id="sync" data-state="off">
     <span class="dot"></span><span id="sync-text">not connected</span>
   </div>
-  <button class="ghost" id="btn-switch">Switch user</button>
-  <button class="ghost" id="btn-settings">Folder</button>
+  <button class="ghost" id="btn-switch">Byt användare</button>
+  <button class="ghost" id="btn-settings">Mapp</button>
 </header>
 
 <main>
   <div class="tabs">
-    <button class="tab on" id="tab-new" data-pane="new">New case</button>
-    <button class="tab" id="tab-log" data-pane="log">Log <span class="count" id="log-badge">0</span></button>
+    <button class="tab on" id="tab-new" data-pane="new">Nytt ärende</button>
+    <button class="tab" id="tab-log" data-pane="log">Logg <span class="count" id="log-badge">0</span></button>
+    <button class="tab" id="tab-stats" data-pane="stats">Statistik</button>
   </div>
 
   <!-- ============ new case ============ -->
@@ -862,18 +898,18 @@
       <!-- ---- product ---- -->
       <div class="block">
         <div class="block-head">
-          <h3>Product</h3>
-          <span class="picked-label" id="picked-label">nothing selected</span>
+          <h3>Produkt</h3>
+          <span class="picked-label" id="picked-label">inget valt</span>
         </div>
 
         <div class="chips" id="common"></div>
 
         <div class="combo">
           <input type="text" id="f-product" autocomplete="off" spellcheck="false"
-                 placeholder="Type a model — E, E1, E12, E124…"
+                 placeholder="Skriv en produkt — E, E1, E12, E124…"
                  role="combobox" aria-expanded="false" aria-autocomplete="list">
-          <button type="button" id="btn-browse">Browse</button>
-          <button type="button" id="btn-addprod" title="Add a product to the list">+</button>
+          <button type="button" id="btn-browse">Bläddra</button>
+          <button type="button" id="btn-addprod" title="Lägg till en produkt i listan">+</button>
           <div class="menu" id="prod-menu" hidden></div>
         </div>
 
@@ -887,71 +923,73 @@
       <!-- ---- the rest ---- -->
       <div class="block">
         <div class="grid2">
-          <label for="f-serial">Serial no.</label>
-          <input type="text" id="f-serial" autocomplete="off" placeholder="if available">
+          <label for="f-serial">Serienummer</label>
+          <input type="text" id="f-serial" autocomplete="off" placeholder="om det finns">
 
-          <label for="f-order">Order no.</label>
-          <input type="text" id="f-order" autocomplete="off" placeholder="if available">
+          <label for="f-order">Ordernummer</label>
+          <input type="text" id="f-order" autocomplete="off" placeholder="om det finns">
 
           <div class="full" id="dupe-hint" hidden></div>
 
-          <label for="f-company">Company</label>
+          <label for="f-company">Företag</label>
           <input type="text" id="f-company" list="l-company" autocomplete="off">
           <datalist id="l-company"></datalist>
 
-          <label for="f-installer">Installer</label>
+          <label for="f-installer">Montör</label>
           <input type="text" id="f-installer" list="l-installer" autocomplete="off">
           <datalist id="l-installer"></datalist>
 
-          <label>Level</label>
+          <label>Teknikernivå</label>
           <div class="span" style="display:flex;align-items:center">
-            <div class="meter" id="meter" role="radiogroup" aria-label="Perceived level of the installer"></div>
+            <div class="meter" id="meter" role="radiogroup" aria-label="Montörens tekniska nivå"></div>
             <span class="meter-label" id="meter-label"></span>
           </div>
 
-          <label for="f-date">Date</label>
+          <label for="f-date">Datum</label>
           <div class="row">
             <input type="date" id="f-date" style="width:auto">
-            <button type="button" id="btn-today">Today</button>
+            <button type="button" id="btn-today">Idag</button>
           </div>
 
-          <label for="f-duration">Minutes</label>
-          <div class="row">
-            <input type="number" id="f-duration" min="0" step="1" style="width:74px">
-            <button type="button" id="btn-timer">Start timer</button>
+          <label for="f-h">Tid</label>
+          <div class="row hms">
+            <input type="number" id="f-h" min="0" step="1" placeholder="0"><span class="u">tim</span>
+            <input type="number" id="f-m" min="0" step="1" placeholder="0"><span class="u">min</span>
+            <input type="number" id="f-s" min="0" step="1" placeholder="0"><span class="u">sek</span>
+            <button type="button" id="btn-timer">Starta timer</button>
             <span class="timer-readout" id="timer-readout">00:00</span>
-            <button type="button" class="ghost" id="btn-timer-reset">Reset</button>
+            <button type="button" class="ghost" id="btn-timer-reset">Nollställ</button>
           </div>
 
-          <label>First call</label>
+          <label>Första samtalet</label>
           <div class="span row">
             <label class="check">
               <input type="checkbox" id="f-first" checked>
-              First call on this case
+              Första samtalet i ärendet
             </label>
             <span class="row" id="related-wrap" hidden>
-              <label for="f-related" style="color:var(--muted);font-size:12.5px">follow-up to case</label>
-              <input type="text" id="f-related" style="width:92px" placeholder="e.g. AN-12" autocomplete="off">
+              <label for="f-related" style="color:var(--muted);font-size:12.5px">uppföljning på</label>
+              <input type="text" id="f-related" style="width:92px" placeholder="t.ex. AN-12" autocomplete="off">
             </span>
           </div>
 
-          <label for="f-status">Outcome</label>
+          <label for="f-status">Resultat</label>
           <select id="f-status" class="span" style="width:auto">
-            <option>Resolved</option>
-            <option>Follow-up needed</option>
-            <option>Escalated</option>
-            <option>Waiting on customer</option>
+            <option>Löst</option>
+            <option>Uppföljning behövs</option>
+            <option>Eskalerat</option>
+            <option>Väntar på kund</option>
           </select>
 
-          <label for="f-notes" class="start">Notes</label>
+          <label for="f-notes" class="start">Anteckningar</label>
           <textarea id="f-notes" class="span" rows="4"></textarea>
 
           <div class="full actions">
-            <button class="primary" id="btn-save">Save case<kbd>Ctrl+S</kbd></button>
-            <button id="btn-clear">Clear<kbd>Ctrl+N</kbd></button>
+            <button class="primary" id="btn-save">Spara ärende<kbd>Ctrl+S</kbd></button>
+            <button id="btn-clear">Rensa<kbd>Ctrl+N</kbd></button>
             <span class="spacer"></span>
             <span class="editing-flag" id="editing-flag" hidden></span>
-            <button class="ghost" id="btn-cancel-edit" hidden>Cancel edit</button>
+            <button class="ghost" id="btn-cancel-edit" hidden>Avbryt ändring</button>
           </div>
         </div>
       </div>
@@ -961,9 +999,9 @@
   <!-- ============ log ============ -->
   <section class="pane" id="pane-log" hidden>
     <div class="toolbar" style="padding-top:12px">
-      <input type="text" id="q" placeholder="Search company, installer, product, serial, order, notes or case number">
-      <button id="btn-refresh">Refresh<kbd>F5</kbd></button>
-      <button id="btn-export">Export</button>
+      <input type="text" id="q" placeholder="Sök företag, montör, produkt, serienummer, ordernummer, anteckningar eller ärendenummer">
+      <button id="btn-refresh">Uppdatera<kbd>F5</kbd></button>
+      <button id="btn-export">Exportera</button>
       <span class="meter-label" id="log-count"></span>
     </div>
     <div class="tablewrap">
@@ -975,63 +1013,72 @@
         </colgroup>
         <thead>
           <tr>
-            <th class="num">Case</th>
-            <th>Date</th>
-            <th>Company</th>
-            <th>Product</th>
-            <th>Installer</th>
-            <th>Lvl</th>
-            <th class="num">Min</th>
-            <th>Outcome</th>
-            <th>By</th>
+            <th class="num">Ärende</th>
+            <th>Datum</th>
+            <th>Företag</th>
+            <th>Produkt</th>
+            <th>Montör</th>
+            <th>Nivå</th>
+            <th class="num">Tid</th>
+            <th>Resultat</th>
+            <th>Av</th>
           </tr>
         </thead>
         <tbody id="tbody"></tbody>
       </table>
-      <div class="empty" id="empty">No shared folder chosen yet.</div>
+      <div class="empty" id="empty">Ingen delad mapp vald ännu.</div>
     </div>
+  </section>
+
+  <section class="pane" id="pane-stats" hidden>
+    <div class="toolbar" style="padding-top:12px">
+      <div class="chips" id="period" style="margin:0"></div>
+      <span style="flex:1"></span>
+      <span class="meter-label" id="stats-range"></span>
+    </div>
+    <div class="statwrap" id="statwrap"></div>
   </section>
 </main>
 
 <!-- ============ settings ============ -->
 <dialog id="settings">
   <div class="dlg-head">
-    <h3>Shared folder</h3>
-    <p>Where the case log is kept. All three of you point at the same folder.</p>
+    <h3>Delad mapp</h3>
+    <p>Här ligger ärendeloggen. Alla tre pekar mot samma mapp.</p>
   </div>
   <div class="dlg-body">
     <div class="banner" id="settings-banner"></div>
     <dl class="kv" style="grid-template-columns:110px 1fr">
-      <dt>Folder</dt><dd id="s-folder" class="mono">—</dd>
-      <dt>Signed in as</dt><dd id="s-user">—</dd>
-      <dt>Logging as</dt><dd id="s-prefix" class="mono">—</dd>
-      <dt>People</dt><dd id="s-people">—</dd>
+      <dt>Mapp</dt><dd id="s-folder" class="mono">—</dd>
+      <dt>Inloggad som</dt><dd id="s-user">—</dd>
+      <dt>Loggar som</dt><dd id="s-prefix" class="mono">—</dd>
+      <dt>Personer</dt><dd id="s-people">—</dd>
     </dl>
     <p class="hint">
-      Each person's cases are kept in their own file in this folder, so two people
-      saving at the same moment can never overwrite each other. Back the folder up
-      the way you back up any other shared folder.
+      Varje persons ärenden ligger i en egen fil i den här mappen, så två personer
+      kan aldrig skriva över varandra när de sparar samtidigt. Säkerhetskopiera
+      mappen som vilken annan delad mapp som helst.
     </p>
   </div>
   <div class="dlg-foot">
-    <button class="ghost" id="s-forget">Forget this folder</button>
+    <button class="ghost" id="s-forget">Glöm den här mappen</button>
     <span class="spacer"></span>
-    <button id="s-change">Choose a different folder</button>
-    <button class="primary" id="s-cancel">Close</button>
+    <button id="s-change">Välj en annan mapp</button>
+    <button class="primary" id="s-cancel">Stäng</button>
   </div>
 </dialog>
 
 <!-- ============ add a product ============ -->
 <dialog id="addprod">
   <div class="dlg-head">
-    <h3>Add a product</h3>
-    <p>It becomes available to everyone the next time they read the folder.</p>
+    <h3>Lägg till produkt</h3>
+    <p>Den blir tillgänglig för alla nästa gång de läser mappen.</p>
   </div>
   <div class="dlg-body">
     <div class="banner" id="addprod-banner"></div>
     <div class="grid" style="grid-template-columns:96px 1fr">
-      <label for="a-model">Model</label>
-      <input type="text" id="a-model" autocomplete="off" placeholder="e.g. E124S">
+      <label for="a-model">Produkt</label>
+      <input type="text" id="a-model" autocomplete="off" placeholder="t.ex. E124S">
 
       <label for="a-brand">Fabrikat</label>
       <input type="text" id="a-brand" list="l-brand" autocomplete="off" placeholder="DAAB, FAAC, Magnetic…">
@@ -1042,30 +1089,31 @@
       <datalist id="l-cat"></datalist>
     </div>
     <p class="hint">
-      Type a new fabrikat or kategori to create one — they aren't fixed lists.
+      Skriv ett nytt fabrikat eller en ny kategori för att skapa den — listorna är
+      inte låsta.
     </p>
   </div>
   <div class="dlg-foot">
-    <button id="a-cancel">Cancel</button>
-    <button class="primary" id="a-save">Add and select</button>
+    <button id="a-cancel">Avbryt</button>
+    <button class="primary" id="a-save">Lägg till och välj</button>
   </div>
 </dialog>
 
 <!-- ============ case detail ============ -->
 <dialog id="detail">
   <div class="dlg-head">
-    <h3 id="d-title">Case</h3>
+    <h3 id="d-title">Ärende</h3>
     <p id="d-sub"></p>
   </div>
   <div class="dlg-body">
     <dl class="kv" id="d-body"></dl>
   </div>
   <div class="dlg-foot">
-    <button id="d-followup">Log follow-up</button>
-    <button id="d-edit">Edit</button>
+    <button id="d-followup">Logga uppföljning</button>
+    <button id="d-edit">Ändra</button>
     <span class="meter-label" id="d-note" hidden></span>
     <span class="spacer"></span>
-    <button class="primary" id="d-close">Close</button>
+    <button class="primary" id="d-close">Stäng</button>
   </div>
 </dialog>
 
@@ -1105,19 +1153,56 @@ const FILE_RE   = /^caselog-([a-z0-9_-]+)\.json$/i;
 const POLL_MS   = 30000;
 
 const LEVELS = {
-  1: "1 — novice",
-  2: "2 — basic",
-  3: "3 — competent",
-  4: "4 — experienced",
+  1: "1 — nybörjare",
+  2: "2 — grundläggande",
+  3: "3 — kompetent",
+  4: "4 — erfaren",
   5: "5 — expert",
 };
 
 const STATUS_CLASS = {
-  "Resolved": "resolved",
-  "Follow-up needed": "followup",
-  "Escalated": "escalated",
-  "Waiting on customer": "waiting",
+  "Löst": "resolved",
+  "Uppföljning behövs": "followup",
+  "Eskalerat": "escalated",
+  "Väntar på kund": "waiting",
 };
+const STATUS_DONE = "Löst";
+
+/* Older cases may still carry the English values. */
+const STATUS_MIGRATE = {
+  "Resolved": "Löst",
+  "Follow-up needed": "Uppföljning behövs",
+  "Escalated": "Eskalerat",
+  "Waiting on customer": "Väntar på kund",
+};
+const statusOf = (c) => STATUS_MIGRATE[c.status] || c.status || "";
+
+/* ---------- time ---------- */
+
+/* Cases used to store whole minutes. Read both, write seconds. */
+function secondsOf(c) {
+  if (c && c.seconds != null) return Number(c.seconds) || 0;
+  if (c && c.duration != null) return (Number(c.duration) || 0) * 60;
+  return 0;
+}
+
+/** 45 -> "0:45", 930 -> "15:30", 4230 -> "1:10:30" */
+function fmtTime(sec) {
+  sec = Math.max(0, Math.round(Number(sec) || 0));
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+  return h
+    ? `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
+    : `${m}:${String(s).padStart(2, "0")}`;
+}
+
+/** Longer form for the statistics pane. */
+function fmtLong(sec) {
+  sec = Math.max(0, Math.round(Number(sec) || 0));
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+  if (h) return `${h} tim ${m} min`;
+  if (m) return `${m} min ${s} sek`;
+  return `${s} sek`;
+}
 
 /* ---------- helpers ---------- */
 
@@ -1216,7 +1301,7 @@ const supported = () => typeof window.showDirectoryPicker === "function";
 async function pickFolder() {
   const handle = await window.showDirectoryPicker({ mode: "readwrite", id: "caselog" });
   const perm = await handle.requestPermission({ mode: "readwrite" });
-  if (perm !== "granted") throw new Error("Writing to that folder wasn't allowed.");
+  if (perm !== "granted") throw new Error("Skrivbehörighet till mappen nekades.");
   dir = handle;
   await rememberFolder(handle);
   return handle;
@@ -1231,7 +1316,7 @@ async function folderPermission() {
 
 async function regrantFolder() {
   const perm = await dir.requestPermission({ mode: "readwrite" });
-  if (perm !== "granted") throw new Error("Access to the folder wasn't allowed.");
+  if (perm !== "granted") throw new Error("Åtkomst till mappen nekades.");
   return perm;
 }
 
@@ -1253,6 +1338,8 @@ async function readEveryone() {
         prefix: data.prefix || "XX",
         cases: Array.isArray(data.cases) ? data.cases : [],
         products: Array.isArray(data.products) ? data.products : [],
+        brands: Array.isArray(data.brands) ? data.brands : [],
+        cats: Array.isArray(data.cats) ? data.cats : [],
         handle: entry,
       });
     } catch (e) {
@@ -1266,12 +1353,13 @@ async function readEveryone() {
 
 /* Only ever called for the signed-in person's own file. */
 async function writeMine() {
-  if (!me) throw new Error("Nobody is signed in.");
+  if (!me) throw new Error("Ingen är inloggad.");
   const fh = await dir.getFileHandle(`caselog-${me.slug}.json`, { create: true });
   const w = await fh.createWritable();
   try {
     await w.write(JSON.stringify(
-      { name: me.name, prefix: me.prefix, products: me.products || [], cases: me.cases },
+      { name: me.name, prefix: me.prefix, products: me.products || [],
+        brands: me.brands || [], cats: me.cats || [], cases: me.cases },
       null, 1));
   } finally {
     await w.close();   // commits the swap file; leaving it open would lose the write
@@ -1329,8 +1417,8 @@ function stamp() {
 /* ---------- refresh ---------- */
 
 async function refresh(quiet) {
-  if (!dir) { setSync("off", "no folder"); return; }
-  if (!quiet) setSync("busy", "reading…");
+  if (!dir) { setSync("off", "ingen mapp"); return; }
+  if (!quiet) setSync("busy", "läser…");
   try {
     people = await readEveryone();
     if (me) {
@@ -1344,13 +1432,14 @@ async function refresh(quiet) {
     if (!$("browser").hidden) renderBrowser();
     renderDupeHint();
     render();
-    setSync("ok", `read ${stamp()}`);
+    if (!$("pane-stats").hidden) renderStats();
+    setSync("ok", `läst ${stamp()}`);
     if (!quiet) banner("form-banner", null, null);
   } catch (e) {
-    setSync("error", "folder unreachable");
+    setSync("error", "mappen kan inte nås");
     if (!quiet) {
       banner("form-banner", "error",
-        `Could not read the shared folder — is the network drive connected? (${e.message})`);
+        `Kunde inte läsa den delade mappen — är nätverksenheten ansluten? (${e.message})`);
     }
   }
 }
@@ -1383,7 +1472,7 @@ function render() {
       <td class="trunc">${esc(c.product)}${c.brand ? `<br><span class="link-ref" style="color:var(--muted)">${esc(c.brand)}</span>` : ""}</td>
       <td class="trunc">${esc(c.installer)}</td>
       <td>${levelBars(c.level)}</td>
-      <td class="num">${c.duration != null ? c.duration : ""}</td>
+      <td class="num">${secondsOf(c) ? fmtTime(secondsOf(c)) : ""}</td>
       <td><span class="chip ${STATUS_CLASS[c.status] || "waiting"}">${esc(c.status)}</span></td>
       <td class="trunc">${esc(c.by)}</td>
     </tr>`).join("");
@@ -1392,10 +1481,10 @@ function render() {
   $("empty").hidden = hasAny;
   if (!hasAny) {
     $("empty").textContent = !dir
-      ? "No shared folder chosen yet."
+      ? "Ingen delad mapp vald ännu."
       : (cases.length === 0
-          ? `No cases yet. Your first one will be ${me ? me.prefix + "-1" : "case 1"}.`
-          : `Nothing matches “${q}”.`);
+          ? `Inga ärenden ännu. Ditt första blir ${me ? me.prefix + "-1" : "1"}.`
+          : `Inget matchar “${q}”.`);
   }
   $("log-count").textContent = hasAny ? `${rows.length}${q ? ` of ${cases.length}` : ""}` : "";
   $("log-badge").textContent = cases.length;
@@ -1403,7 +1492,7 @@ function render() {
   const today = todayISO();
   $("st-total").textContent = cases.length;
   $("st-today").textContent = cases.filter((c) => c.date === today).length;
-  $("st-open").textContent  = cases.filter((c) => c.status !== "Resolved").length;
+  $("st-open").textContent  = cases.filter((c) => statusOf(c) !== STATUS_DONE).length;
 }
 
 function refreshLists() {
@@ -1523,10 +1612,20 @@ function searchProducts(q) {
   return { starts, contains };
 }
 
+/** Fabrikat and kategorier anyone has added, even with no products yet. */
+function customList(key) {
+  const out = new Set();
+  for (const p of people) for (const v of (p[key] || [])) if (v) out.add(v);
+  return [...out];
+}
+
+const allCategories = () => [...new Set(
+  CATEGORIES.concat(customList("cats")).concat(allProducts().map((p) => p.cat)).filter(Boolean))];
+
 function brandsInUse() {
   const counts = new Map();
   for (const p of allProducts()) counts.set(p.brand, (counts.get(p.brand) || 0) + 1);
-  for (const b of BRANDS) if (!counts.has(b)) counts.set(b, 0);
+  for (const b of BRANDS.concat(customList("brands"))) if (!counts.has(b)) counts.set(b, 0);
   return [...counts.entries()]
     .sort((a, b) => a[0].localeCompare(b[0], "sv"))
     .map(([name, n]) => ({ name, n }));
@@ -1567,11 +1666,11 @@ function paintPicked() {
   const el = $("picked-label");
   if (!p) {
     el.className = "picked-label";
-    el.textContent = "nothing selected";
+    el.textContent = "inget valt";
   } else {
     el.className = "picked-label set";
     el.innerHTML = p.free
-      ? `${esc(p.model)}<span class="free">typed in</span>`
+      ? `${esc(p.model)}<span class="free">fritext</span>`
       : `${esc(p.model)} <span class="brand">· ${esc(p.brand)} · ${esc(p.cat)}</span>`;
   }
 }
@@ -1623,11 +1722,11 @@ function openMenu(q) {
   };
 
   if (starts.length) {
-    html += `<div class="menu-group">Starts with “${esc(q)}”</div>`;
+    html += `<div class="menu-group">Börjar med “${esc(q)}”</div>`;
     for (const p of starts) { html += row(p, menuItems.length); menuItems.push(p); }
   }
   if (contains.length) {
-    html += `<div class="menu-group">Also matching</div>`;
+    html += `<div class="menu-group">Matchar även</div>`;
     for (const p of contains) { html += row(p, menuItems.length); menuItems.push(p); }
   }
 
@@ -1636,14 +1735,14 @@ function openMenu(q) {
     const exact = menuItems.some((p) => norm(p.model) === norm(typed));
     if (!exact) {
       html += `<div class="menu-item freetext" data-i="${menuItems.length}">
-                 <span class="model">Use “${esc(typed)}” as typed</span>
-                 <span class="meta">not in the list</span>
+                 <span class="model">Använd “${esc(typed)}” som skrivet</span>
+                 <span class="meta">finns inte i listan</span>
                </div>`;
       menuItems.push({ model: typed, free: true });
     }
   }
 
-  if (!html) html = `<div class="menu-empty">Nothing matches “${esc(q)}”.</div>`;
+  if (!html) html = `<div class="menu-empty">Inget matchar “${esc(q)}”.</div>`;
 
   $("prod-menu").innerHTML = html;
   $("prod-menu").hidden = false;
@@ -1697,7 +1796,7 @@ function chooseMenuItem(i) {
 function toggleBrowse() {
   const b = $("browser");
   b.hidden = !b.hidden;
-  $("btn-browse").textContent = b.hidden ? "Browse" : "Hide";
+  $("btn-browse").textContent = b.hidden ? "Bläddra" : "Dölj";
   if (!b.hidden) {
     if (!browseBrand) browseBrand = (picked && picked.brand) || BRANDS[0];
     if (!browseCat) {
@@ -1713,7 +1812,8 @@ function renderBrowser() {
   $("col-brand").innerHTML =
     `<div class="mcol-head">Fabrikat</div>` +
     brands.map((b) => `<div class="mitem${b.name === browseBrand ? " on" : ""}" data-brand="${esc(b.name)}">
-        <span>${esc(b.name)}</span><span class="n">${b.n}</span></div>`).join("");
+        <span>${esc(b.name)}</span><span class="n">${b.n}</span></div>`).join("") +
+    `<div class="mitem add" data-newbrand="1">+ Nytt fabrikat</div>`;
 
   const cats = browseBrand ? catsFor(browseBrand) : [];
   $("col-cat").innerHTML =
@@ -1721,25 +1821,57 @@ function renderBrowser() {
     (cats.length
       ? cats.map((c) => `<div class="mitem${c.name === browseCat ? " on" : ""}" data-cat="${esc(c.name)}">
             <span>${esc(c.name)}</span><span class="n">${c.n}</span></div>`).join("")
-      : `<div class="mcol-empty">No products for ${esc(browseBrand || "")} yet.</div>`);
+      : `<div class="mcol-empty">Inga produkter för ${esc(browseBrand || "")} ännu.</div>`) +
+    (browseBrand ? `<div class="mitem add" data-newcat="1">+ Ny kategori</div>` : "");
 
   const models = (browseBrand && browseCat) ? modelsFor(browseBrand, browseCat) : [];
   $("col-model").innerHTML =
-    `<div class="mcol-head">Modell</div>` +
+    `<div class="mcol-head">Produkter</div>` +
     models.map((m) => `<div class="mitem${picked && !picked.free && picked.model === m.model && picked.brand === m.brand ? " on" : ""}"
          data-model="${esc(m.model)}">${esc(m.model)}</div>`).join("") +
-    `<div class="mitem add" data-add="1">+ Add a product here</div>`;
+    `<div class="mitem add" data-add="1">+ Lägg till produkt här</div>`;
 }
 
 /* ---------- add-product dialog ---------- */
+
+/** Create an empty fabrikat or kategori so it shows up before any product does. */
+async function addBucket(kind) {
+  const what = kind === "brands" ? "fabrikat" : "kategori";
+  const name = (prompt(`Namn på nytt ${what}:`) || "").trim();
+  if (!name) return;
+  if (!me) { banner("form-banner", "warn", "Klicka på ditt namn först."); return; }
+
+  const existing = kind === "brands"
+    ? brandsInUse().map((b) => b.name) : allCategories();
+  if (existing.some((v) => v.toLowerCase() === name.toLowerCase())) {
+    banner("form-banner", "info", `${name} fanns redan.`);
+    if (kind === "brands") { browseBrand = name; browseCat = null; }
+    else browseCat = name;
+    renderBrowser();
+    return;
+  }
+
+  const before = (me[kind] || []).slice();
+  try {
+    me[kind] = (me[kind] || []).concat([name]);
+    await writeMine();
+  } catch (e) {
+    me[kind] = before;
+    banner("form-banner", "error", `Kunde inte spara: ${e.message}`);
+    return;
+  }
+  if (kind === "brands") { browseBrand = name; browseCat = null; }
+  else browseCat = name;
+  renderBrowser();
+  banner("form-banner", "info", `${what.charAt(0).toUpperCase() + what.slice(1)} ${name} tillagt.`);
+}
 
 function openAddProduct(prefill) {
   $("a-model").value = (prefill && prefill.model) || $("f-product").value.trim();
   $("a-brand").value = (prefill && prefill.brand) || browseBrand || "";
   $("a-cat").value   = (prefill && prefill.cat) || browseCat || "";
   $("l-brand").innerHTML = brandsInUse().map((b) => `<option value="${esc(b.name)}">`).join("");
-  $("l-cat").innerHTML = [...new Set(CATEGORIES.concat(allProducts().map((p) => p.cat)))]
-    .map((c) => `<option value="${esc(c)}">`).join("");
+  $("l-cat").innerHTML = allCategories().map((c) => `<option value="${esc(c)}">`).join("");
   banner("addprod-banner", null, null);
   $("addprod").showModal();
   $("a-model").focus();
@@ -1749,14 +1881,14 @@ async function saveNewProduct() {
   const model = $("a-model").value.trim();
   const brand = $("a-brand").value.trim() || "Övrigt";
   const cat   = $("a-cat").value.trim() || "Övrigt";
-  if (!model) { banner("addprod-banner", "warn", "Give the product a model name."); return; }
-  if (!me)    { banner("addprod-banner", "warn", "Click your name first."); return; }
+  if (!model) { banner("addprod-banner", "warn", "Ge produkten ett namn."); return; }
+  if (!me)    { banner("addprod-banner", "warn", "Klicka på ditt namn först."); return; }
 
   const clash = allProducts().find((p) => norm(p.model) === norm(model) && norm(p.brand) === norm(brand));
   if (clash) {
     $("addprod").close();
     pickFromCatalog(clash);
-    banner("form-banner", "info", `${clash.model} was already in the list.`);
+    banner("form-banner", "info", `${clash.model} fanns redan i listan.`);
     return;
   }
 
@@ -1767,7 +1899,7 @@ async function saveNewProduct() {
     await writeMine();
   } catch (e) {
     me.products = before;
-    banner("addprod-banner", "error", `Could not write to the shared folder: ${e.message}`);
+    banner("addprod-banner", "error", `Kunde inte skriva till den delade mappen: ${e.message}`);
     $("a-save").disabled = false;
     return;
   }
@@ -1777,18 +1909,18 @@ async function saveNewProduct() {
   browseCat = cat;
   if (!$("browser").hidden) renderBrowser();
   pickFromCatalog({ brand, cat, model });
-  banner("form-banner", "info", `${model} added under ${brand} · ${cat}.`);
+  banner("form-banner", "info", `${model} tillagd under ${brand} · ${cat}.`);
 }
 
 /* ---------- tabs ---------- */
 
 function showPane(which) {
-  const isNew = which === "new";
-  $("pane-new").hidden = !isNew;
-  $("pane-log").hidden = isNew;
-  $("tab-new").classList.toggle("on", isNew);
-  $("tab-log").classList.toggle("on", !isNew);
-  if (!isNew) { render(); $("q").focus(); }
+  for (const id of ["new", "log", "stats"]) {
+    $("pane-" + id).hidden = id !== which;
+    $("tab-" + id).classList.toggle("on", id === which);
+  }
+  if (which === "log") { render(); $("q").focus(); }
+  else if (which === "stats") renderStats();
   else $("f-product").focus();
 }
 
@@ -1840,12 +1972,12 @@ function renderDupeHint() {
 
   let html = "";
   if (bySerial.length) {
-    html += `<strong>Serial ${esc(serial)} has been in before — same unit.</strong>
+    html += `<strong>Serienummer ${esc(serial)} har varit inne förut — samma enhet.</strong>
              <div class="rows">${bySerial.map(hit).join("")}</div>`;
   }
   if (byOrder.length) {
     html += `${bySerial.length ? '<div style="height:7px"></div>' : ""}
-             <strong>Order ${esc(order)} has been in before.</strong>
+             <strong>Ordernummer ${esc(order)} har varit inne förut.</strong>
              <div class="rows">${byOrder.map(hit).join("")}</div>`;
   }
 
@@ -1855,12 +1987,205 @@ function renderDupeHint() {
   if (best && $("f-first").checked) {
     const origin = originOf(best);
     html += `<div class="acts">
-        <button type="button" data-link="${esc(origin)}">Make this a follow-up of ${esc(origin)}</button>
+        <button type="button" data-link="${esc(origin)}">Gör detta till en uppföljning av ${esc(origin)}</button>
       </div>`;
   }
 
   el.innerHTML = `<div class="dupe">${html}</div>`;
   el.hidden = false;
+}
+
+
+/* ==========================================================================
+   STATISTIK
+   Everything is derived from the merged case list, so it covers all three of
+   you and needs nothing stored.
+   ========================================================================== */
+
+const PERIODS = [
+  { id: "today", label: "Idag" },
+  { id: "week",  label: "Denna vecka" },
+  { id: "month", label: "Denna månad" },
+  { id: "all",   label: "Allt" },
+];
+let period = "today";
+
+function periodStart(id) {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  if (id === "today") return d;
+  if (id === "week") {
+    // Monday-based, as in Sweden.
+    const dow = (d.getDay() + 6) % 7;
+    d.setDate(d.getDate() - dow);
+    return d;
+  }
+  if (id === "month") { d.setDate(1); return d; }
+  return new Date(0);
+}
+
+function casesInPeriod(id) {
+  const from = periodStart(id);
+  return cases.filter((c) => {
+    const t = new Date(`${c.date}T00:00:00`);
+    return !isNaN(t) && t >= from;
+  });
+}
+
+/** Group and total, returning the biggest first. */
+function tally(list, keyOf, valueOf) {
+  const m = new Map();
+  for (const c of list) {
+    const k = keyOf(c);
+    if (!k) continue;
+    const cur = m.get(k) || { key: k, n: 0, sec: 0 };
+    cur.n += 1;
+    cur.sec += valueOf ? valueOf(c) : 0;
+    m.set(k, cur);
+  }
+  return [...m.values()];
+}
+
+const byCount = (a, b) => b.n - a.n || a.key.localeCompare(b.key, "sv");
+const bySec = (a, b) => b.sec - a.sec || a.key.localeCompare(b.key, "sv");
+
+function bars(rows, max, fmt) {
+  if (!rows.length) return '<div class="statempty">Inga ärenden i perioden.</div>';
+  return rows.map((r) => `
+    <div class="barrow">
+      <span class="lbl">${esc(r.key)}</span>
+      <span class="num">${esc(fmt(r))}</span>
+      <span class="track"><span class="fill" style="width:${max ? Math.round((r.v / max) * 100) : 0}%"></span></span>
+    </div>`).join("");
+}
+
+function topList(rows, valueKey, fmt, limit) {
+  const sorted = rows.map((r) => ({ ...r, v: r[valueKey] }))
+    .sort((a, b) => b.v - a.v || a.key.localeCompare(b.key, "sv"))
+    .slice(0, limit || 6);
+  return bars(sorted, sorted.length ? sorted[0].v : 0, fmt);
+}
+
+/** Cases per day over the period, as a small SVG column chart. */
+function dayChart(list, id) {
+  const from = periodStart(id);
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  let days = Math.round((today - from) / 86400000) + 1;
+  if (id === "all" || days > 30) days = 30;
+  if (days < 1) days = 1;
+
+  const counts = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    counts.push({ key, label: `${d.getDate()}/${d.getMonth() + 1}`, n: list.filter((c) => c.date === key).length });
+  }
+
+  const max = Math.max(1, ...counts.map((c) => c.n));
+  const W = 100, H = 40, gap = 0.6;
+  const bw = (W - gap * (counts.length - 1)) / counts.length;
+
+  const rects = counts.map((c, i) => {
+    const h = c.n ? Math.max(1.5, (c.n / max) * (H - 2)) : 0.7;
+    const x = i * (bw + gap);
+    return `<rect class="bar${c.n ? "" : " dim"}" x="${x.toFixed(2)}" y="${(H - h).toFixed(2)}"
+              width="${bw.toFixed(2)}" height="${h.toFixed(2)}"><title>${c.label}: ${c.n}</title></rect>`;
+  }).join("");
+
+  // Labels are HTML, not SVG text: the chart is stretched to fill its width and
+  // that would distort any text inside it.
+  const every = Math.ceil(counts.length / 8);
+  const ticks = counts.map((c, i) =>
+    `<span style="flex:1;text-align:center">${(counts.length <= 10 || i % every === 0) ? c.label : ""}</span>`
+  ).join("");
+
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img"
+             aria-label="Ärenden per dag">${rects}</svg>
+    <div class="ticks">${ticks}</div>
+    <div class="barrow" style="margin-top:8px">
+      <span class="lbl" style="color:var(--muted);font-size:12px">Högst på en dag: ${max}</span>
+      <span class="num">${counts.reduce((a, c) => a + c.n, 0)} st</span>
+    </div>`;
+}
+
+function renderPeriodChips() {
+  $("period").innerHTML = PERIODS.map((p) =>
+    `<button type="button" class="chip-btn${p.id === period ? " on" : ""}" data-period="${p.id}">${p.label}</button>`
+  ).join("");
+}
+
+function renderStats() {
+  renderPeriodChips();
+  const list = casesInPeriod(period);
+  const totalSec = list.reduce((a, c) => a + secondsOf(c), 0);
+  const open = list.filter((c) => statusOf(c) !== STATUS_DONE).length;
+
+  const label = (PERIODS.find((p) => p.id === period) || {}).label || "";
+  $("stats-range").textContent = period === "all"
+    ? `${cases.length} ärenden totalt`
+    : `${label.toLowerCase()} · från ${periodStart(period).toLocaleDateString("sv-SE")}`;
+
+  const products = tally(list, (c) => c.product, secondsOf);
+  const people_ = tally(list, (c) => c.by, secondsOf);
+  const brands = tally(list, (c) => c.brand, secondsOf);
+  const companies = tally(list, (c) => c.company, secondsOf);
+
+  const mostLogged = [...products].sort(byCount)[0];
+  const longest = [...products].sort(bySec)[0];
+  const busiest = [...people_].sort(byCount)[0];
+
+  $("statwrap").innerHTML = `
+    <div class="kpis">
+      <div class="kpi"><div class="k">Ärenden</div><div class="v">${list.length}</div>
+        <div class="s">${open} öppna</div></div>
+      <div class="kpi"><div class="k">Total tid</div><div class="v">${fmtTime(totalSec)}</div>
+        <div class="s">${fmtLong(totalSec)}</div></div>
+      <div class="kpi"><div class="k">Snitt per ärende</div>
+        <div class="v">${list.length ? fmtTime(totalSec / list.length) : "0:00"}</div>
+        <div class="s">${list.length ? fmtLong(totalSec / list.length) : "inga ärenden"}</div></div>
+      <div class="kpi"><div class="k">Flest ärenden</div>
+        <div class="v" style="font-size:19px">${busiest ? esc(busiest.key) : "—"}</div>
+        <div class="s">${busiest ? busiest.n + " ärenden" : "inga ärenden"}</div></div>
+    </div>
+
+    <div class="statgrid">
+      <div class="card">
+        <h4>Mest loggade produkt</h4>
+        ${mostLogged
+          ? `<div class="lead">${esc(mostLogged.key)}<span class="sub">${mostLogged.n} ärenden</span></div>`
+          : '<div class="statempty">Inga ärenden i perioden.</div>'}
+        <div style="margin-top:10px">${topList(products, "n", (r) => `${r.n} st`)}</div>
+      </div>
+
+      <div class="card">
+        <h4>Längst tid per produkt</h4>
+        ${longest && longest.sec
+          ? `<div class="lead">${esc(longest.key)}<span class="sub">${fmtLong(longest.sec)}</span></div>`
+          : '<div class="statempty">Ingen tid registrerad i perioden.</div>'}
+        <div style="margin-top:10px">${topList(products, "sec", (r) => fmtTime(r.sec))}</div>
+      </div>
+
+      <div class="card" style="grid-column:1/-1">
+        <h4>Ärenden per dag</h4>
+        ${dayChart(list, period)}
+      </div>
+
+      <div class="card">
+        <h4>Per person</h4>
+        ${topList(people_, "n", (r) => `${r.n} st · ${fmtTime(r.sec)}`)}
+      </div>
+
+      <div class="card">
+        <h4>Per fabrikat</h4>
+        ${topList(brands, "n", (r) => `${r.n} st`)}
+      </div>
+
+      <div class="card">
+        <h4>Företag som ringer mest</h4>
+        ${topList(companies, "n", (r) => `${r.n} st · ${fmtTime(r.sec)}`)}
+      </div>
+    </div>`;
 }
 
 /* ---------- level meter ---------- */
@@ -1898,13 +2223,13 @@ function toggleTimer() {
     timerAcc += Date.now() - timerStart;
     timerRunning = false;
     clearInterval(timerTick);
-    $("btn-timer").textContent = "Resume timer";
+    $("btn-timer").textContent = "Fortsätt timer";
     $("timer-readout").classList.remove("live");
-    $("f-duration").value = Math.max(1, Math.round(timerAcc / 60000));
+    setHMS(Math.max(1, Math.round(timerAcc / 1000)));
   } else {
     timerStart = Date.now();
     timerRunning = true;
-    $("btn-timer").textContent = "Stop timer";
+    $("btn-timer").textContent = "Stoppa timer";
     $("timer-readout").classList.add("live");
     timerTick = setInterval(paintTimer, 1000);
     paintTimer();
@@ -1921,12 +2246,37 @@ function paintTimer() {
 function resetTimer() {
   clearInterval(timerTick);
   timerRunning = false; timerAcc = 0; timerStart = 0;
-  $("btn-timer").textContent = "Start timer";
+  $("btn-timer").textContent = "Starta timer";
   $("timer-readout").textContent = "00:00";
   $("timer-readout").classList.remove("live");
 }
 
 /* ---------- form ---------- */
+
+/* ---------- hours / minutes / seconds ---------- */
+
+function setHMS(sec) {
+  sec = Math.max(0, Math.round(Number(sec) || 0));
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+  $("f-h").value = h || "";
+  $("f-m").value = m || "";
+  $("f-s").value = s || "";
+}
+
+/** Reads the three boxes. Values over 59 roll up, so "90 min" means 1:30. */
+function getHMS() {
+  const n = (id) => {
+    const raw = $(id).value.trim();
+    if (raw === "") return 0;
+    const v = Number(raw);
+    return Number.isFinite(v) && v >= 0 ? v : NaN;
+  };
+  const h = n("f-h"), m = n("f-m"), sec = n("f-s");
+  if ([h, m, sec].some(Number.isNaN)) return NaN;
+  return Math.round(h * 3600 + m * 60 + sec);
+}
+
+const hmsEmpty = () => !$("f-h").value.trim() && !$("f-m").value.trim() && !$("f-s").value.trim();
 
 function clearForm() {
   editingId = null;
@@ -1938,15 +2288,15 @@ function clearForm() {
   $("f-company").value = "";
   $("f-installer").value = "";
   setLevel(3);
-  $("f-duration").value = "";
+  setHMS(0);
   $("f-first").checked = true;
   $("f-related").value = "";
-  $("f-status").value = "Resolved";
+  $("f-status").value = STATUS_DONE;
   $("f-notes").value = "";
   resetTimer();
   toggleRelated();
   renderDupeHint();
-  $("btn-save").innerHTML = 'Save case<kbd>Ctrl+S</kbd>';
+  $("btn-save").innerHTML = 'Spara ärende<kbd>Ctrl+S</kbd>';
   $("editing-flag").hidden = true;
   $("btn-cancel-edit").hidden = true;
   banner("form-banner", null, null);
@@ -1964,7 +2314,7 @@ function formHasContent() {
     picked || $("f-product").value.trim() || $("f-company").value.trim() ||
     $("f-installer").value.trim() || $("f-serial").value.trim() ||
     $("f-order").value.trim() || $("f-notes").value.trim() ||
-    $("f-duration").value.trim() || timerRunning
+    !hmsEmpty() || timerRunning
   );
 }
 
@@ -1978,20 +2328,19 @@ function collect() {
                   : { model: typed, free: true });
   }
   if (!picked) {
-    banner("form-banner", "warn", "Pick the product this call was about.");
+    banner("form-banner", "warn", "Välj vilken produkt samtalet gällde.");
     $("f-product").focus();
     return null;
   }
   const product = picked.model;
   const date = $("f-date").value;
-  if (!date) { banner("form-banner", "warn", "Pick a date for the call."); return null; }
+  if (!date) { banner("form-banner", "warn", "Välj ett datum för samtalet."); return null; }
 
-  const durRaw = $("f-duration").value.trim();
-  let duration = null;
-  if (durRaw !== "") {
-    duration = Math.round(Number(durRaw));
-    if (!Number.isFinite(duration) || duration < 0) {
-      banner("form-banner", "warn", "Minutes must be a number, or leave it blank.");
+  let seconds = null;
+  if (!hmsEmpty()) {
+    seconds = getHMS();
+    if (Number.isNaN(seconds)) {
+      banner("form-banner", "warn", "Tiden måste anges med siffror, eller lämnas tom.");
       return null;
     }
   }
@@ -2001,16 +2350,16 @@ function collect() {
   if (!first) {
     related = $("f-related").value.trim().toUpperCase();
     if (!related) {
-      banner("form-banner", "warn", "This is marked as a follow-up — give the case it follows up on, e.g. AN-12.");
+      banner("form-banner", "warn", "Ärendet är markerat som uppföljning — ange vilket ärende, t.ex. AN-12.");
       $("f-related").focus();
       return null;
     }
     if (related === editingId) {
-      banner("form-banner", "warn", "A case cannot follow up on itself.");
+      banner("form-banner", "warn", "Ett ärende kan inte följa upp sig självt.");
       return null;
     }
     if (!findCase(related)) {
-      banner("form-banner", "warn", `There is no case ${related} in the log.`);
+      banner("form-banner", "warn", `Det finns inget ärende ${related} i loggen.`);
       $("f-related").focus();
       return null;
     }
@@ -2026,7 +2375,7 @@ function collect() {
     company: $("f-company").value.trim(),
     installer: $("f-installer").value.trim(),
     level,
-    duration,
+    seconds,
     first,
     related,
     status: $("f-status").value,
@@ -2036,19 +2385,19 @@ function collect() {
 }
 
 async function save() {
-  if (!me) { banner("form-banner", "warn", "Click your name first."); return; }
+  if (!me) { banner("form-banner", "warn", "Klicka på ditt namn först."); return; }
   const record = collect();
   if (!record) return;
 
   $("btn-save").disabled = true;
-  setSync("busy", "saving…");
+  setSync("busy", "sparar…");
 
   const before = me.cases.slice();           // so a failed write changes nothing
   let savedId;
   try {
     if (editingId != null) {
       const existing = me.cases.find((c) => c.id === editingId);
-      if (!existing) throw new Error("That case is no longer in your file.");
+      if (!existing) throw new Error("Ärendet finns inte längre i din fil.");
       Object.assign(existing, record, { id: editingId, at: existing.at });
       savedId = editingId;
     } else {
@@ -2058,21 +2407,21 @@ async function save() {
     await writeMine();
   } catch (e) {
     me.cases = before;
-    setSync("error", "save failed");
+    setSync("error", "kunde inte spara");
     banner("form-banner", "error",
-      `Could not write to the shared folder. Nothing was lost — press Save case to try again. (${e.message})`);
+      `Kunde inte skriva till den delade mappen. Inget har gått förlorat — tryck Spara ärende för att försöka igen. (${e.message})`);
     $("btn-save").disabled = false;
     return;
   }
 
   const wasEdit = editingId != null;
   $("btn-save").disabled = false;
-  setSync("ok", `saved ${stamp()}`);
+  setSync("ok", `sparat ${stamp()}`);
   remerge();
   clearForm();
   refreshLists();
   render();
-  banner("form-banner", "info", wasEdit ? `Case ${savedId} updated.` : `Saved as case ${savedId}.`);
+  banner("form-banner", "info", wasEdit ? `Ärende ${savedId} uppdaterat.` : `Sparat som ärende ${savedId}.`);
 }
 
 function loadIntoForm(c) {
@@ -2085,17 +2434,17 @@ function loadIntoForm(c) {
   $("f-company").value = c.company || "";
   $("f-installer").value = c.installer || "";
   setLevel(c.level || 3);
-  $("f-duration").value = c.duration != null ? c.duration : "";
+  setHMS(secondsOf(c));
   $("f-first").checked = !!c.first;
   $("f-related").value = c.related || "";
-  $("f-status").value = c.status || "Resolved";
+  $("f-status").value = statusOf(c) || STATUS_DONE;
   $("f-notes").value = c.notes || "";
   toggleRelated();
   resetTimer();
   renderDupeHint();
-  $("btn-save").innerHTML = `Update ${esc(c.id)}<kbd>Ctrl+S</kbd>`;
+  $("btn-save").innerHTML = `Uppdatera ${esc(c.id)}<kbd>Ctrl+S</kbd>`;
   $("editing-flag").hidden = false;
-  $("editing-flag").textContent = `editing ${c.id}`;
+  $("editing-flag").textContent = `ändrar ${c.id}`;
   $("btn-cancel-edit").hidden = false;
   banner("form-banner", null, null);
   showPane("new");
@@ -2118,7 +2467,7 @@ function startFollowUp(c) {
   $("f-related").value = origin;
   renderDupeHint();
   showPane("new");
-  banner("form-banner", "info", `New follow-up to case ${origin}. Add the duration and notes.`);
+  banner("form-banner", "info", `Ny uppföljning på ärende ${origin}. Fyll i tid och anteckningar.`);
   $("f-notes").focus();
 }
 
@@ -2130,10 +2479,10 @@ function saveDraft() {
     date: $("f-date").value, picked,
     serial: $("f-serial").value, order: $("f-order").value,
     company: $("f-company").value, installer: $("f-installer").value, level,
-    duration: $("f-duration").value, first: $("f-first").checked,
+    h: $("f-h").value, m: $("f-m").value, sec: $("f-s").value, first: $("f-first").checked,
     related: $("f-related").value, status: $("f-status").value, notes: $("f-notes").value,
   };
-  const empty = !d.picked && !d.company && !d.installer && !d.notes && !d.duration;
+  const empty = !d.picked && !d.company && !d.installer && !d.notes && !d.h && !d.m && !d.sec;
   try {
     if (empty) localStorage.removeItem(LS_DRAFT);
     else localStorage.setItem(LS_DRAFT, JSON.stringify(d));
@@ -2153,13 +2502,13 @@ function restoreDraft() {
   $("f-company").value = d.company || "";
   $("f-installer").value = d.installer || "";
   setLevel(d.level || 3);
-  $("f-duration").value = d.duration || "";
+  $("f-h").value = d.h || ""; $("f-m").value = d.m || ""; $("f-s").value = d.sec || "";
   $("f-first").checked = d.first !== false;
   $("f-related").value = d.related || "";
-  $("f-status").value = d.status || "Resolved";
+  $("f-status").value = d.status || STATUS_DONE;
   $("f-notes").value = d.notes || "";
   toggleRelated();
-  banner("form-banner", "info", "Restored what you had typed before the window closed.");
+  banner("form-banner", "info", "Återställde det du hade skrivit innan fönstret stängdes.");
 }
 
 /* ---------- detail ---------- */
@@ -2170,41 +2519,41 @@ function openDetail(id) {
   selected = id;
   render();
 
-  $("d-title").textContent = `Case ${c.id}`;
-  $("d-sub").textContent = `${c.date} · logged by ${c.by}`;
+  $("d-title").textContent = `Ärende ${c.id}`;
+  $("d-sub").textContent = `${c.date} · loggat av ${c.by}`;
 
   const follows = cases.filter((x) => x.related === c.id).map((x) => x.id).join(", ");
   const sameUnit = identifierMatches(c.serial, c.order, c.id);
   const idList = (arr) => arr.map((x) =>
     `<span class="link-ref" style="cursor:pointer" data-jump="${esc(x.id)}">${esc(x.id)}</span>`).join(", ");
   const rows = [
-    ["Product", `<strong>${esc(c.product)}</strong>` +
+    ["Produkt", `<strong>${esc(c.product)}</strong>` +
       (c.brand ? ` <span style="color:var(--muted)">${esc(c.brand)} · ${esc(c.cat)}</span>` : "")],
-    ...(c.serial ? [["Serial no.", `<span class="mono">${esc(c.serial)}</span>`]] : []),
-    ...(c.order ? [["Order no.", `<span class="mono">${esc(c.order)}</span>`]] : []),
-    ["Company", esc(c.company) || "—"],
-    ["Installer", esc(c.installer) || "—"],
-    ["Level", `${levelBars(c.level)} <span style="color:var(--muted)">${LEVELS[c.level] || ""}</span>`],
-    ["Duration", c.duration != null ? `${c.duration} min` : "—"],
-    ["First call", c.first ? "Yes" : `No — follows up on ${esc(c.related)}`],
-    ...(follows ? [["Followed by", esc(follows)]] : []),
+    ...(c.serial ? [["Serienummer", `<span class="mono">${esc(c.serial)}</span>`]] : []),
+    ...(c.order ? [["Ordernummer", `<span class="mono">${esc(c.order)}</span>`]] : []),
+    ["Företag", esc(c.company) || "—"],
+    ["Montör", esc(c.installer) || "—"],
+    ["Teknikernivå", `${levelBars(c.level)} <span style="color:var(--muted)">${LEVELS[c.level] || ""}</span>`],
+    ["Tid", secondsOf(c) ? fmtLong(secondsOf(c)) : "—"],
+    ["Första samtalet", c.first ? "Ja" : `Nej — uppföljning på ${esc(c.related)}`],
+    ...(follows ? [["Följs av", esc(follows)]] : []),
     ...(sameUnit.bySerial.length
-        ? [["Same unit", `${idList(sameUnit.bySerial)} <span style="color:var(--muted)">· same serial</span>`]] : []),
+        ? [["Samma enhet", `${idList(sameUnit.bySerial)} <span style="color:var(--muted)">· samma serienummer</span>`]] : []),
     ...(sameUnit.byOrder.length
-        ? [["Same order", idList(sameUnit.byOrder)]] : []),
-    ["Outcome", `<span class="chip ${STATUS_CLASS[c.status] || "waiting"}">${esc(c.status)}</span>`],
+        ? [["Samma order", idList(sameUnit.byOrder)]] : []),
+    ["Resultat", `<span class="chip ${STATUS_CLASS[c.status] || "waiting"}">${esc(c.status)}</span>`],
   ];
 
   $("d-body").innerHTML =
     rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("") +
-    (c.notes ? `<dt>Notes</dt><dd class="note">${esc(c.notes)}</dd>` : "");
+    (c.notes ? `<dt>Anteckningar</dt><dd class="note">${esc(c.notes)}</dd>` : "");
 
   // Editing someone else's case would mean writing their file. Nobody writes
   // anyone else's file, so this is offered only for your own.
   const mine = isMine(c);
   $("d-edit").hidden = !mine;
   $("d-note").hidden = mine;
-  if (!mine) $("d-note").textContent = `${c.by}'s case — ask them to change it`;
+  if (!mine) $("d-note").textContent = `${c.by}s ärende — be hen ändra det`;
 
   $("d-body").onclick = (e) => {
     const j = e.target.closest("[data-jump]");
@@ -2218,10 +2567,11 @@ function openDetail(id) {
 /* ---------- export ---------- */
 
 function exportCsv() {
-  if (!cases.length) { banner("form-banner", "warn", "There is nothing to export yet."); return; }
-  const headers = ["Case", "Date", "Logged by", "Fabrikat", "Kategori", "Product",
-                   "Serial no.", "Order no.", "Company", "Installer",
-                   "Level", "Minutes", "First call", "Follows up on", "Outcome", "Notes", "Saved at"];
+  if (!cases.length) { banner("form-banner", "warn", "Det finns inget att exportera ännu."); return; }
+  const headers = ["Ärende", "Datum", "Loggat av", "Fabrikat", "Kategori", "Produkt",
+                   "Serienummer", "Ordernummer", "Företag", "Montör",
+                   "Teknikernivå", "Tid", "Sekunder", "Första samtalet", "Uppföljning på",
+                   "Resultat", "Anteckningar", "Sparat"];
 
   // Semicolons and a BOM, so Swedish Excel opens it straight into columns.
   const cell = (v) => {
@@ -2233,8 +2583,8 @@ function exportCsv() {
   for (const c of ordered) {
     lines.push([c.id, c.date, c.by, c.brand || "", c.cat || "", c.product,
                 c.serial || "", c.order || "", c.company, c.installer, c.level,
-                c.duration != null ? c.duration : "", c.first ? "Yes" : "No",
-                c.related || "", c.status, c.notes, c.at].map(cell).join(";"));
+                fmtTime(secondsOf(c)), secondsOf(c), c.first ? "Ja" : "Nej",
+                c.related || "", statusOf(c), c.notes, c.at].map(cell).join(";"));
   }
 
   const blob = new Blob(["\uFEFF" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
@@ -2245,7 +2595,7 @@ function exportCsv() {
   a.click();
   document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  banner("form-banner", "info", `Exported ${cases.length} cases. Double-click the file to open it in Excel.`);
+  banner("form-banner", "info", `Exporterade ${cases.length} ärenden. Dubbelklicka på filen för att öppna den i Excel.`);
 }
 
 /* ---------- sign-in screen ---------- */
@@ -2258,16 +2608,16 @@ function showGate(message) {
   const ready = Boolean(dir);
   $("gate-connect").hidden = ready;
   $("gate-people").hidden = !ready;
-  $("gate-repo").textContent = dir ? dir.name : "no folder chosen";
+  $("gate-repo").textContent = dir ? dir.name : "ingen mapp vald";
 
   if (!ready) {
-    $("gate-sub").textContent = "Where is the shared case log?";
+    $("gate-sub").textContent = "Var ligger den delade ärendeloggen?";
   } else {
     $("who").innerHTML = people.map((p) =>
       `<button type="button" data-slug="${esc(p.slug)}">${esc(p.name)}</button>`).join("");
     $("gate-sub").textContent = people.length
-      ? "Who's using this?"
-      : "Nobody is set up yet — add the first name below.";
+      ? "Vem använder detta?"
+      : "Ingen är upplagd ännu — lägg till det första namnet nedan.";
   }
   setTimeout(() => {
     const el = !ready ? $("btn-pick") : ($("who").querySelector("button") || $("gate-new"));
@@ -2292,7 +2642,7 @@ function signIn(person) {
 }
 
 function signOut() {
-  if (formHasContent() && !confirm("You have a case part-typed. Switch user anyway?")) return;
+  if (formHasContent() && !confirm("Du har ett påbörjat ärende. Byta användare ändå?")) return;
   me = null;
   try { sessionStorage.removeItem(SS_USER); } catch (e) {}
   stopPolling();
@@ -2304,13 +2654,13 @@ function signOut() {
 async function addPerson() {
   const name = $("gate-new").value.trim();
   if (!name) return;
-  if (!dir) { showGate({ bad: true, text: "Choose the shared folder first." }); return; }
+  if (!dir) { showGate({ bad: true, text: "Välj den delade mappen först." }); return; }
 
   const existing = people.find((p) => p.slug === slugify(name));
   if (existing) { $("gate-new").value = ""; signIn(existing); return; }
 
   $("gate-add-btn").disabled = true;
-  showGate({ text: `Adding ${name}…` });
+  showGate({ text: `Lägger till ${name}…` });
   try {
     people = await readEveryone();            // someone may have been added meanwhile
     const again = people.find((p) => p.slug === slugify(name));
@@ -2322,6 +2672,8 @@ async function addPerson() {
       prefix: prefixFor(name, people.map((p) => p.prefix)),
       cases: [],
       products: [],
+      brands: [],
+      cats: [],
       handle: null,
     };
     people.push(person);
@@ -2331,7 +2683,7 @@ async function addPerson() {
     signIn(person);
   } catch (e) {
     me = null;
-    showGate({ bad: true, text: `Could not write to the folder: ${e.message}` });
+    showGate({ bad: true, text: `Kunde inte skriva till mappen: ${e.message}` });
   } finally {
     $("gate-add-btn").disabled = false;
   }
@@ -2341,12 +2693,12 @@ async function addPerson() {
 
 async function chooseFolder() {
   try {
-    showGate({ text: "Waiting for you to pick a folder…" });
+    showGate({ text: "Väntar på att du väljer en mapp…" });
     await pickFolder();
     people = await readEveryone();
     remerge();
     render();
-    setSync("ok", `read ${stamp()}`);
+    setSync("ok", `läst ${stamp()}`);
     showGate(null);
   } catch (e) {
     if (e && e.name === "AbortError") { showGate(null); return; }
@@ -2356,12 +2708,12 @@ async function chooseFolder() {
 
 async function reconnectFolder() {
   try {
-    showGate({ text: "Waiting for permission…" });
+    showGate({ text: "Väntar på behörighet…" });
     await regrantFolder();
     people = await readEveryone();
     remerge();
     render();
-    setSync("ok", `read ${stamp()}`);
+    setSync("ok", `läst ${stamp()}`);
     resumeSession();
   } catch (e) {
     showGate({ bad: true, text: e.message });
@@ -2379,8 +2731,8 @@ function resumeSession() {
 /* ---------- folder dialog ---------- */
 
 function openSettings() {
-  $("s-folder").textContent = dir ? dir.name : "— none chosen —";
-  $("s-user").textContent = me ? me.name : "not signed in";
+  $("s-folder").textContent = dir ? dir.name : "— ingen vald —";
+  $("s-user").textContent = me ? me.name : "inte inloggad";
   $("s-prefix").textContent = me ? `${me.prefix}-…` : "—";
   $("s-people").textContent = people.length ? people.map((p) => p.name).join(", ") : "—";
   banner("settings-banner", null, null);
@@ -2402,7 +2754,7 @@ async function forgetThisFolder() {
   stopPolling();
   $("settings").close();
   $("whoami").textContent = "—";
-  setSync("off", "no folder");
+  setSync("off", "ingen mapp");
   render();
   showGate(null);
 }
@@ -2442,6 +2794,11 @@ function init() {
   // ---- tabs ----
   $("tab-new").onclick = () => showPane("new");
   $("tab-log").onclick = () => showPane("log");
+  $("tab-stats").onclick = () => showPane("stats");
+  $("period").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-period]");
+    if (b) { period = b.dataset.period; renderStats(); }
+  });
 
   // ---- product picker ----
   const prodInput = $("f-product");
@@ -2507,7 +2864,7 @@ function init() {
       toggleRelated();
       $("f-related").value = link.dataset.link;
       renderDupeHint();
-      banner("form-banner", "info", `Linked to case ${link.dataset.link}.`);
+      banner("form-banner", "info", `Kopplat till ärende ${link.dataset.link}.`);
     }
   });
 
@@ -2515,6 +2872,7 @@ function init() {
   $("btn-addprod").onclick = () => openAddProduct(null);
 
   $("col-brand").addEventListener("click", (e) => {
+    if (e.target.closest("[data-newbrand]")) { addBucket("brands"); return; }
     const it = e.target.closest("[data-brand]");
     if (!it) return;
     browseBrand = it.dataset.brand;
@@ -2523,6 +2881,7 @@ function init() {
     renderBrowser();
   });
   $("col-cat").addEventListener("click", (e) => {
+    if (e.target.closest("[data-newcat]")) { addBucket("cats"); return; }
     const it = e.target.closest("[data-cat]");
     if (!it) return;
     browseCat = it.dataset.cat;
@@ -2601,11 +2960,11 @@ async function boot() {
     $("gate").hidden = false;
     $("gate-connect").hidden = true;
     $("gate-people").hidden = true;
-    $("gate-sub").textContent = "This browser can't open a shared folder.";
+    $("gate-sub").textContent = "Den här webbläsaren kan inte öppna en delad mapp.";
     $("gate-status").className = "gate-status bad";
     $("gate-status").textContent =
-      "Open this file in Microsoft Edge or Google Chrome. Firefox and Safari don't support writing to a folder yet.";
-    setSync("off", "unsupported browser");
+      "Öppna filen i Microsoft Edge eller Google Chrome. Firefox och Safari stöder ännu inte att skriva till en mapp.";
+    setSync("off", "webbläsaren stöds ej");
     return;
   }
 
@@ -2616,8 +2975,8 @@ async function boot() {
   if (perm !== "granted") {
     // Chrome deliberately requires a click before handing back folder access.
     $("gate-connect").hidden = false;
-    $("btn-pick").textContent = "Open the shared folder";
-    showGate({ text: `Ready to open ${dir.name}. Click to continue.` });
+    $("btn-pick").textContent = "Öppna den delade mappen";
+    showGate({ text: `Redo att öppna ${dir.name}. Klicka för att fortsätta.` });
     $("gate-connect").hidden = false;
     return;
   }
@@ -2627,11 +2986,11 @@ async function boot() {
     remerge();
     refreshLists();
     render();
-    setSync("ok", `read ${stamp()}`);
+    setSync("ok", `läst ${stamp()}`);
     resumeSession();
   } catch (e) {
-    setSync("error", "folder unreachable");
-    showGate({ bad: true, text: `Could not read ${dir.name} — is the network drive connected?` });
+    setSync("error", "mappen kan inte nås");
+    showGate({ bad: true, text: `Kunde inte läsa ${dir.name} — är nätverksenheten ansluten?` });
   }
 }
 
@@ -2650,7 +3009,9 @@ window.__caselog = {
   get dir() { return dir; },
   slugify, prefixFor, readEveryone, writeMine, remerge, render, refresh,
   boot, showGate, resumeSession, formHasContent,
-  allProducts, searchProducts, catsFor, modelsFor, showPane,
+  allProducts, searchProducts, catsFor, modelsFor, showPane, allCategories,
+  brandsInUse, secondsOf, fmtTime, casesInPeriod, renderStats,
+  set period(v) { period = v; }, get period() { return period; },
   get picked() { return picked; },
 };
 
