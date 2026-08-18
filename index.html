@@ -238,6 +238,12 @@
   .chip-x { background: #E7F0F5; border-color: #B6D3E0; color: var(--accent-d); }
   .chip-x i { font-style: normal; margin-left: 7px; opacity: .6; cursor: pointer; }
   .chip-x i:hover { opacity: 1; color: var(--red); }
+  .chip-tag { background: #F3EEF7; border-color: #D6C7E2; color: #5B3D74; font-weight: 550; }
+  .chip-tag i { font-style: normal; margin-left: 7px; opacity: .55; cursor: pointer; }
+  .chip-tag i:hover { opacity: 1; color: var(--red); }
+  .report .tag { display: inline-block; background: #F3EEF7; border: 1px solid #D6C7E2;
+                 color: #5B3D74; border-radius: 9px; padding: 0 7px; margin: 0 4px 3px 0;
+                 font-size: 11px; }
 
   /* ---------- combo box ---------- */
 
@@ -1073,6 +1079,16 @@
             <option>Väntar på kund</option>
           </select>
 
+          <label for="f-tags">Taggar</label>
+          <div class="span">
+            <div class="combo">
+              <input type="text" id="f-tags" autocomplete="off" spellcheck="false"
+                     placeholder="Kodord för kända fel — skriv och tryck Enter">
+              <div class="menu" id="tag-menu" hidden></div>
+            </div>
+            <div class="chips" id="tagchips" hidden style="margin-top:6px"></div>
+          </div>
+
           <label for="f-notes" class="start">Anteckningar</label>
           <textarea id="f-notes" class="span" rows="4"></textarea>
 
@@ -1563,7 +1579,7 @@ function matches(c, q) {
   if (!q) return true;
   const needle = q.toLowerCase();
   return [c.id, c.company, c.installer, ...allCaseProducts(c), c.brand, c.serial, c.order,
-          c.notes, c.by, c.status]
+          c.notes, c.by, c.status, ...(c.tags || [])]
     .some((v) => String(v || "").toLowerCase().includes(needle));
 }
 
@@ -2346,6 +2362,18 @@ function renderStats() {
       </div>
 
       <div class="card">
+        <h4>Vanligaste taggar</h4>
+        ${(() => {
+          const t = new Map();
+          for (const c of list) for (const tag of (c.tags || []))
+            t.set(tag, (t.get(tag) || 0) + 1);
+          const rows = [...t.entries()].map(([key, n]) => ({ key, n, sec: 0 }));
+          return rows.length ? topList(rows, "n", (r) => `${r.n} st`)
+                             : '<div class="statempty">Inga taggar i perioden.</div>';
+        })()}
+      </div>
+
+      <div class="card">
         <h4>Per fabrikat</h4>
         ${topList(brands, "n", (r) => `${r.n} st`)}
       </div>
@@ -2489,10 +2517,13 @@ function renderReport() {
     ? `<span class="v">${esc(v)}</span>`
     : `<span class="v empty">${fallback}</span>`;
 
-  const prod = picked
-    ? (picked.free
-        ? esc(picked.model)
-        : `${esc(picked.brand)} – ${esc(picked.cat)} – <strong>${esc(picked.model)}</strong>`)
+  // Alla produkter på ärendet listas likvärdigt; fabrikat och kategori visas
+  // för den som är vald just nu.
+  const onCase = [...extras, ...(picked ? [picked] : [])];
+  const prod = onCase.length
+    ? `<strong>${onCase.map((x) => esc(x.model)).join(", ")}</strong>` +
+      (picked && !picked.free
+        ? `<br><span style="color:var(--muted)">${esc(picked.brand)} · ${esc(picked.cat)}</span>` : "")
     : '<span class="v empty">ingen produkt vald</span>';
 
   const serial = $("f-serial").value.trim();
@@ -2606,6 +2637,7 @@ function printCase(c) {
       ${line("Kontakt", [c.installer, c.role].filter(Boolean).join(" · "))}
       ${line("Produkt", [c.brand, c.cat, c.product].filter(Boolean).join(" – "))}
       ${line("Fler produkter", (c.extras || []).map((x) => x.model).join(", "))}
+      ${line("Taggar", (c.tags || []).join(", "))}
       ${line("Serienummer", c.serial)}
       ${line("Ordernummer", c.order)}
       ${line("Teknikernivå", LEVELS[c.level] || "")}
@@ -2619,6 +2651,34 @@ function printCase(c) {
         : ""}
     </div>`;
   window.print();
+}
+
+/* ---------- taggar ---------- */
+
+/* Fria kodord för kända fel. Skrivs på ärendet, samlas ihop från alla ärenden
+   och blir därmed en lista som växer av sig själv. */
+let tags = [];
+
+const allTags = () => {
+  const out = new Set();
+  for (const c of cases) for (const t of (c.tags || [])) if (t) out.add(t);
+  return [...out];
+};
+
+function renderTags() {
+  const el = $("tagchips");
+  el.hidden = tags.length === 0;
+  el.innerHTML = tags.map((t, i) =>
+    `<span class="chip-btn chip-tag">${esc(t)}<i data-t="${i}" title="Ta bort">×</i></span>`).join("");
+}
+
+function addTag(raw) {
+  const t = String(raw || "").trim().replace(/^#/, "");
+  if (!t) return;
+  if (tags.some((x) => norm(x) === norm(t))) return;
+  tags.push(t);
+  renderTags();
+  renderReport();
 }
 
 /* ---------- fler produkter på samma ärende ---------- */
@@ -2766,6 +2826,9 @@ function clearForm() {
   closeMenu();
   extras = [];
   renderExtras();
+  tags = [];
+  $("f-tags").value = "";
+  renderTags();
   $("f-serial").value = "";
   $("f-order").value = "";
   $("f-company").value = "";
@@ -2855,6 +2918,7 @@ function collect() {
     product,
     brand: picked.free ? "" : picked.brand,
     cat: picked.free ? "" : picked.cat,
+    tags: tags.slice(),
     extras: extras.map((p) => ({ brand: p.brand || "", cat: p.cat || "", model: p.model })),
     serial: $("f-serial").value.trim(),
     order: $("f-order").value.trim(),
@@ -2926,6 +2990,8 @@ function loadIntoForm(c) {
                     : { model: c.product, free: true });
   extras = (c.extras || []).slice();
   renderExtras();
+  tags = (c.tags || []).slice();
+  renderTags();
   $("f-serial").value = c.serial || "";
   $("f-order").value = c.order || "";
   $("f-company").value = c.company || "";
@@ -3030,6 +3096,8 @@ function openDetail(id) {
       (c.brand ? ` <span style="color:var(--muted)">${esc(c.brand)} · ${esc(c.cat)}</span>` : "")],
     ...((c.extras || []).length
         ? [["Fler produkter", esc(c.extras.map((x) => x.model).join(", "))]] : []),
+    ...((c.tags || []).length
+        ? [["Taggar", c.tags.map((t) => `<span class="chip ${""}" style="background:#F3EEF7;border-color:#D6C7E2;color:#5B3D74">${esc(t)}</span>`).join(" ")]] : []),
     ...(c.serial ? [["Serienummer", `<span class="mono">${esc(c.serial)}</span>`]] : []),
     ...(c.order ? [["Ordernummer", `<span class="mono">${esc(c.order)}</span>`]] : []),
     ["Företag", esc(c.company) || "—"],
@@ -3071,7 +3139,7 @@ function openDetail(id) {
 function exportCsv() {
   if (!cases.length) { banner("form-banner", "warn", "Det finns inget att exportera ännu."); return; }
   const headers = ["Ärende", "Datum", "Loggat av", "Fabrikat", "Kategori", "Produkt",
-                   "Fler produkter", "Serienummer", "Ordernummer", "Företag", "Montör",
+                   "Fler produkter", "Taggar", "Serienummer", "Ordernummer", "Företag", "Montör",
                    "Teknikernivå", "Tid", "Sekunder", "Första samtalet", "Uppföljning på",
                    "Resultat", "Anteckningar", "Sparat"];
 
@@ -3085,6 +3153,7 @@ function exportCsv() {
   for (const c of ordered) {
     lines.push([c.id, c.date, c.by, c.brand || "", c.cat || "", c.product,
                 (c.extras || []).map((x) => x.model).join(" | "),
+                (c.tags || []).join(" | "),
                 c.serial || "", c.order || "", c.company, c.installer, c.level,
                 fmtTime(secondsOf(c)), secondsOf(c), c.first ? "Ja" : "Nej",
                 c.related || "", statusOf(c), c.notes, c.at].map(cell).join(";"));
@@ -3378,6 +3447,23 @@ function init() {
   $("btn-browse").onclick = toggleBrowse;
   $("btn-addprod").onclick = () => openAddProduct(null);
   $("btn-more").onclick = addAnotherProduct;
+  attachCombo("f-tags", "tag-menu", allTags);
+  $("f-tags").addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" || !$("tag-menu").hidden) return;
+    e.preventDefault();
+    addTag($("f-tags").value);
+    $("f-tags").value = "";
+  });
+  $("f-tags").addEventListener("change", () => {
+    if ($("f-tags").value.trim()) { addTag($("f-tags").value); $("f-tags").value = ""; }
+  });
+  $("tagchips").addEventListener("click", (e) => {
+    const x = e.target.closest("[data-t]");
+    if (!x) return;
+    tags.splice(Number(x.dataset.t), 1);
+    renderTags();
+    renderReport();
+  });
   $("extras").addEventListener("click", (e) => {
     const x = e.target.closest("[data-x]");
     if (!x) return;
