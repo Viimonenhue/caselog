@@ -1,0 +1,2659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Case Log</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2305668D'/%3E%3Cg fill='white'%3E%3Crect x='13' y='38' width='7' height='12' rx='1.5'/%3E%3Crect x='23' y='31' width='7' height='19' rx='1.5'/%3E%3Crect x='33' y='24' width='7' height='26' rx='1.5'/%3E%3Crect x='43' y='15' width='7' height='35' rx='1.5'/%3E%3C/g%3E%3C/svg%3E">
+<style>
+  :root {
+    --paper:   #EDEEE9;
+    --surface: #FFFFFF;
+    --ink:     #14171A;
+    --muted:   #626A72;
+    --line:    #D5D8D2;
+    --line-hi: #B9BEB6;
+    --accent:  #05668D;
+    --accent-d:#044F6D;
+    --amber:   #B26B00;
+    --red:     #A93226;
+    --green:   #1E7A44;
+
+    --ui: ui-sans-serif, "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+    --mono: ui-monospace, "Cascadia Mono", "Cascadia Code", Consolas, "SF Mono", monospace;
+
+    --r: 3px;
+  }
+
+  * { box-sizing: border-box; }
+
+  /* A class that sets `display` would otherwise beat the hidden attribute. */
+  [hidden] { display: none !important; }
+
+  html, body {
+    height: 100%;
+    margin: 0;
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--ui);
+    font-size: 14px;
+    line-height: 1.45;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ---------- sign-in screen ---------- */
+
+  #gate {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background: var(--paper);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  #gate[hidden] { display: none !important; }
+
+  .gate-card {
+    width: 100%;
+    max-width: 520px;
+    text-align: center;
+  }
+  .gate-mark {
+    display: inline-flex;
+    align-items: flex-end;
+    gap: 4px;
+    height: 34px;
+    margin-bottom: 18px;
+  }
+  .gate-mark i { width: 8px; background: var(--accent); border-radius: 2px; }
+  .gate-mark i:nth-child(1) { height: 34%; }
+  .gate-mark i:nth-child(2) { height: 55%; }
+  .gate-mark i:nth-child(3) { height: 76%; }
+  .gate-mark i:nth-child(4) { height: 100%; }
+
+  .gate-card h1 {
+    margin: 0 0 4px;
+    font-size: 22px;
+    font-weight: 650;
+    letter-spacing: -0.015em;
+  }
+  .gate-card p.sub {
+    margin: 0 0 26px;
+    color: var(--muted);
+    font-size: 13.5px;
+  }
+
+  .who {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 22px;
+  }
+  .who button {
+    font-size: 16px;
+    font-weight: 600;
+    padding: 14px 26px;
+    min-width: 132px;
+    background: var(--surface);
+    border: 1px solid var(--line-hi);
+    border-radius: 4px;
+  }
+  .who button:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: var(--surface);
+    color: var(--accent-d);
+  }
+
+  .gate-add { display: flex; gap: 8px; justify-content: center; }
+  .gate-add input { max-width: 270px; }
+  .gate-foot {
+    margin-top: 30px;
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    align-items: center;
+  }
+  .gate-foot button { font-size: 12px; padding: 3px 8px; }
+
+  .gate-status {
+    font-size: 12.5px;
+    color: var(--muted);
+    min-height: 18px;
+    margin-bottom: 14px;
+  }
+  .gate-status.bad { color: var(--red); }
+
+
+  /* ---------- tabs ---------- */
+
+  .tabs {
+    display: flex;
+    gap: 2px;
+    padding: 0 16px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line-hi);
+    flex: none;
+  }
+  .tab {
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: none;
+    border-radius: 0;
+    padding: 9px 16px;
+    font-size: 13.5px;
+    color: var(--muted);
+    font-weight: 550;
+  }
+  .tab:hover { background: #F4F5F1; }
+  .tab.on { color: var(--accent-d); border-bottom-color: var(--accent); }
+  .tab .count {
+    font-family: var(--mono);
+    font-size: 11px;
+    background: var(--paper);
+    border: 1px solid var(--line-hi);
+    border-radius: 8px;
+    padding: 0 6px;
+    margin-left: 6px;
+    color: var(--muted);
+  }
+
+  .pane { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+  .pane[hidden] { display: none !important; }
+
+  .form-wrap {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px 16px 20px;
+    max-width: 1080px;
+    width: 100%;
+  }
+
+  /* ---------- field blocks ---------- */
+
+  .block {
+    border: 1px solid var(--line-hi);
+    border-radius: 4px;
+    background: var(--surface);
+    padding: 11px 13px 13px;
+    margin-bottom: 12px;
+  }
+  .block-head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 9px;
+  }
+  .block-head h3 {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 650;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .block-head .picked-label {
+    font-size: 13px;
+    color: var(--muted);
+    font-style: italic;
+  }
+  .block-head .picked-label.set {
+    font-style: normal;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .block-head .picked-label .brand {
+    font-weight: 400;
+    color: var(--muted);
+  }
+  .block-head .picked-label .free {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--amber);
+    margin-left: 6px;
+  }
+
+  /* ---------- common-product chips ---------- */
+
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 9px; }
+  .chip-btn {
+    font-size: 13px;
+    font-weight: 550;
+    padding: 5px 11px;
+    border-radius: 14px;
+    border: 1px solid var(--line-hi);
+    background: var(--paper);
+  }
+  .chip-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent-d); background: var(--surface); }
+  .chip-btn.on { background: var(--accent); border-color: var(--accent-d); color: #fff; }
+
+  /* ---------- combo box ---------- */
+
+  .combo { position: relative; display: flex; gap: 6px; }
+  .combo input { flex: 1; min-width: 0; font-size: 15px; padding: 8px 10px; }
+  .combo button { white-space: nowrap; }
+
+  .menu {
+    position: absolute;
+    top: calc(100% + 3px);
+    left: 0;
+    right: 0;
+    max-height: 340px;
+    overflow-y: auto;
+    background: var(--surface);
+    border: 1px solid var(--line-hi);
+    border-radius: 4px;
+    box-shadow: 0 8px 24px rgba(20,23,26,.13);
+    z-index: 30;
+  }
+  .menu[hidden] { display: none !important; }
+  .menu-group {
+    font-size: 10.5px;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 7px 11px 3px;
+    background: var(--paper);
+    border-bottom: 1px solid var(--line);
+    position: sticky;
+    top: 0;
+  }
+  .menu-item {
+    display: flex;
+    align-items: baseline;
+    gap: 9px;
+    padding: 6px 11px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--line);
+  }
+  .menu-item:last-child { border-bottom: 0; }
+  .menu-item.active, .menu-item:hover { background: #DCE6EC; }
+  .menu-item .model { font-weight: 600; font-size: 14px; }
+  .menu-item .model mark { background: #FCEFA6; color: inherit; padding: 0 1px; border-radius: 2px; }
+  .menu-item .meta { font-size: 12px; color: var(--muted); margin-left: auto; white-space: nowrap; }
+  .menu-item.freetext .model { font-weight: 500; font-style: italic; }
+  .menu-empty { padding: 11px; font-size: 13px; color: var(--muted); }
+
+  /* ---------- browse (fabrikat / kategori / modell) ---------- */
+
+  .miller {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr 1.4fr;
+    gap: 0;
+    border: 1px solid var(--line-hi);
+    border-radius: 4px;
+    margin-top: 9px;
+    overflow: hidden;
+    background: var(--surface);
+  }
+  .miller[hidden] { display: none !important; }
+  .mcol { border-right: 1px solid var(--line); min-height: 190px; max-height: 260px; overflow-y: auto; }
+  .mcol:last-child { border-right: 0; }
+  .mcol-head {
+    font-size: 10.5px;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 6px 10px;
+    background: var(--paper);
+    border-bottom: 1px solid var(--line);
+    position: sticky;
+    top: 0;
+  }
+  .mitem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 6px 10px;
+    font-size: 13.5px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--line);
+  }
+  .mitem:hover { background: #E5E7E1; }
+  .mitem.on { background: #DCE6EC; font-weight: 600; }
+  .mitem .n { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .mitem.add { color: var(--accent-d); font-weight: 550; }
+  .mcol-empty { padding: 12px 10px; font-size: 12.5px; color: var(--muted); }
+
+  /* ---------- seen-before hint ---------- */
+
+  .dupe {
+    border: 1px solid #E4CDA0;
+    background: #FAF3E6;
+    border-radius: var(--r);
+    padding: 8px 10px;
+    font-size: 12.5px;
+    color: var(--amber);
+  }
+  .dupe strong { color: var(--amber); }
+  .dupe .rows { margin-top: 5px; display: flex; flex-direction: column; gap: 3px; }
+  .dupe .hit {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    cursor: pointer;
+    color: var(--ink);
+    padding: 2px 4px;
+    border-radius: 2px;
+  }
+  .dupe .hit:hover { background: #F2E6CF; }
+  .dupe .hit .cid { font-family: var(--mono); font-weight: 600; color: var(--accent-d); }
+  .dupe .hit .meta { color: var(--muted); font-size: 12px; }
+  .dupe .acts { margin-top: 7px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .dupe .acts button { font-size: 12.5px; padding: 4px 10px; }
+
+  /* ---------- two-column detail grid ---------- */
+
+  .grid2 {
+    display: grid;
+    grid-template-columns: 104px minmax(0, 1fr) 104px minmax(0, 1fr);
+    align-items: center;
+    gap: 8px 10px;
+  }
+  .grid2 > label { font-size: 12.5px; color: var(--muted); text-align: right; }
+  .grid2 > .span { grid-column: 2 / -1; }
+  .grid2 > .full { grid-column: 1 / -1; }
+  .grid2 > .start { align-self: start; padding-top: 7px; }
+  .grid2 > label.start { grid-column: 1; }
+
+  @media (max-width: 900px) {
+    .grid2 { grid-template-columns: 104px minmax(0, 1fr); }
+    .grid2 > .span { grid-column: 2 / -1; }
+    .miller { grid-template-columns: 1fr; }
+    .mcol { max-height: 150px; }
+  }
+
+  /* ---------- top bar ---------- */
+
+  .bar {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 0 16px;
+    height: 46px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line-hi);
+    flex: none;
+  }
+
+  .brand {
+    font-weight: 650;
+    letter-spacing: -0.01em;
+    font-size: 15px;
+    white-space: nowrap;
+  }
+  .brand span {
+    font-family: var(--mono);
+    font-weight: 400;
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0;
+    margin-left: 6px;
+  }
+
+  .stats {
+    display: flex;
+    gap: 18px;
+    font-size: 12px;
+    color: var(--muted);
+    margin-left: auto;
+    white-space: nowrap;
+  }
+  .stats b {
+    font-family: var(--mono);
+    font-weight: 600;
+    color: var(--ink);
+    font-size: 13px;
+  }
+
+  .sync {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    flex: none;
+  }
+  .sync[data-state="busy"] .dot { background: var(--amber); animation: pulse 1s infinite; }
+  .sync[data-state="error"] .dot { background: var(--red); }
+  .sync[data-state="off"] .dot { background: var(--line-hi); }
+  @keyframes pulse { 50% { opacity: .25; } }
+  @media (prefers-reduced-motion: reduce) {
+    .sync[data-state="busy"] .dot { animation: none; }
+  }
+
+  /* ---------- layout ---------- */
+
+  main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .entry, .log {
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .entry {
+    background: var(--surface);
+    border-right: 1px solid var(--line-hi);
+  }
+
+  .pane-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px 10px;
+    flex: none;
+  }
+  .pane-head h2 {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 650;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .pane-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 16px 16px;
+  }
+
+  /* ---------- form ---------- */
+
+  .grid {
+    display: grid;
+    grid-template-columns: 108px 1fr;
+    align-items: center;
+    gap: 8px 12px;
+  }
+  .grid > label {
+    font-size: 12.5px;
+    color: var(--muted);
+    text-align: right;
+  }
+  .grid > .wide { grid-column: 1 / -1; }
+  .grid > .start { align-self: start; padding-top: 7px; }
+
+  input[type="text"], input[type="date"], input[type="number"],
+  input[type="password"], select, textarea {
+    font-family: var(--ui);
+    font-size: 14px;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line-hi);
+    border-radius: var(--r);
+    padding: 6px 8px;
+    width: 100%;
+    min-width: 0;
+  }
+  input[type="date"], input[type="number"], .mono { font-family: var(--mono); }
+  textarea { resize: vertical; line-height: 1.5; }
+
+  input:focus-visible, select:focus-visible, textarea:focus-visible,
+  button:focus-visible, .seg:focus-visible, [tabindex]:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  .row { display: flex; gap: 8px; align-items: center; }
+  .row > .grow { flex: 1; }
+
+  /* signal-meter level picker — the level of the person on the other end */
+  .meter {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 30px;
+    padding: 0;
+    border: 0;
+    background: none;
+    margin: 0;
+  }
+  .meter button {
+    width: 26px;
+    border: 1px solid var(--line-hi);
+    border-bottom-width: 1px;
+    background: var(--paper);
+    border-radius: 2px 2px 0 0;
+    cursor: pointer;
+    padding: 0;
+    transition: background .12s, border-color .12s;
+  }
+  .meter button:nth-child(1) { height: 30%; }
+  .meter button:nth-child(2) { height: 45%; }
+  .meter button:nth-child(3) { height: 60%; }
+  .meter button:nth-child(4) { height: 78%; }
+  .meter button:nth-child(5) { height: 100%; }
+  .meter button:hover { border-color: var(--accent); }
+  .meter button.on {
+    background: var(--accent);
+    border-color: var(--accent-d);
+  }
+  .meter-label {
+    font-size: 12.5px;
+    color: var(--muted);
+    margin-left: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+
+  .check {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .check input { margin: 0; width: 15px; height: 15px; accent-color: var(--accent); }
+
+  button {
+    font-family: var(--ui);
+    font-size: 13px;
+    border: 1px solid var(--line-hi);
+    background: var(--surface);
+    color: var(--ink);
+    border-radius: var(--r);
+    padding: 6px 12px;
+    cursor: pointer;
+  }
+  button:hover:not(:disabled) { border-color: var(--line-hi); background: #F6F7F4; }
+  button:disabled { opacity: .45; cursor: default; }
+
+  button.primary {
+    background: var(--accent);
+    border-color: var(--accent-d);
+    color: #fff;
+    font-weight: 600;
+    padding: 7px 16px;
+  }
+  button.primary:hover:not(:disabled) { background: var(--accent-d); }
+
+  button.ghost { border-color: transparent; background: none; color: var(--muted); }
+  button.ghost:hover:not(:disabled) { background: #EFF0EC; color: var(--ink); }
+
+  kbd {
+    font-family: var(--mono);
+    font-size: 11px;
+    opacity: .7;
+    margin-left: 5px;
+  }
+
+  .timer-readout {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--muted);
+    min-width: 46px;
+  }
+  .timer-readout.live { color: var(--red); }
+
+  .actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding-top: 4px;
+  }
+  .actions .spacer { flex: 1; }
+
+  .banner {
+    font-size: 12.5px;
+    padding: 7px 10px;
+    border-radius: var(--r);
+    margin-bottom: 10px;
+    border: 1px solid;
+    display: none;
+  }
+  .banner.show { display: block; }
+  .banner.info  { background: #E7F0F5; border-color: #B6D3E0; color: var(--accent-d); }
+  .banner.warn  { background: #FAF0DF; border-color: #E4CDA0; color: var(--amber); }
+  .banner.error { background: #F9E9E7; border-color: #E3BCB7; color: var(--red); }
+
+  .editing-flag {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent-d);
+    background: #E7F0F5;
+    border: 1px solid #B6D3E0;
+    border-radius: var(--r);
+    padding: 2px 7px;
+  }
+
+  /* ---------- log table ---------- */
+
+  .toolbar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding: 0 16px 10px;
+    flex: none;
+  }
+  .toolbar input[type="text"] { flex: 1; min-width: 0; }
+
+  .tablewrap { flex: 1; overflow: auto; padding: 0 16px 16px; }
+
+  table { border-collapse: collapse; width: 100%; font-size: 13px; table-layout: fixed; }
+  thead th {
+    position: sticky;
+    top: 0;
+    background: var(--paper);
+    text-align: left;
+    font-size: 10.5px;
+    font-weight: 650;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--line-hi);
+    white-space: nowrap;
+    z-index: 1;
+  }
+  tbody td {
+    padding: 6px 8px;
+    overflow: hidden;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  tbody tr { cursor: pointer; }
+  tbody tr:hover { background: #E5E7E1; }
+  tbody tr.sel { background: #DCE6EC; }
+
+  td.num, th.num { text-align: right; font-family: var(--mono); white-space: nowrap; }
+  td.case {
+    font-family: var(--mono);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  td.date { font-family: var(--mono); color: var(--muted); white-space: nowrap;
+            font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; }
+  td.trunc { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .chip {
+    display: inline-block;
+    font-size: 11px;
+    padding: 1px 7px;
+    border-radius: 9px;
+    border: 1px solid;
+    white-space: nowrap;
+  }
+  .chip.resolved { color: var(--green);  border-color: #A9CFB8; background: #E9F3ED; }
+  .chip.followup { color: var(--amber);  border-color: #E4CDA0; background: #FAF3E6; }
+  .chip.escalated{ color: var(--red);    border-color: #E3BCB7; background: #F9ECEA; }
+  .chip.waiting  { color: var(--muted);  border-color: var(--line-hi); background: var(--paper); }
+
+  .link-ref {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--accent);
+  }
+
+  .lvl {
+    display: inline-flex;
+    align-items: flex-end;
+    gap: 1.5px;
+    height: 12px;
+  }
+  .lvl i {
+    width: 3px;
+    background: var(--line-hi);
+    border-radius: 1px;
+  }
+  .lvl i:nth-child(1) { height: 30%; }
+  .lvl i:nth-child(2) { height: 47%; }
+  .lvl i:nth-child(3) { height: 64%; }
+  .lvl i:nth-child(4) { height: 81%; }
+  .lvl i:nth-child(5) { height: 100%; }
+  .lvl i.on { background: var(--accent); }
+
+  .empty {
+    padding: 40px 16px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  /* ---------- dialogs ---------- */
+
+  dialog {
+    border: 1px solid var(--line-hi);
+    border-radius: 5px;
+    padding: 0;
+    max-width: 520px;
+    width: calc(100% - 32px);
+    box-shadow: 0 10px 40px rgba(0,0,0,.18);
+    color: var(--ink);
+    font-family: var(--ui);
+  }
+  dialog::backdrop { background: rgba(20,23,26,.4); }
+  .dlg-head {
+    padding: 14px 18px 10px;
+    border-bottom: 1px solid var(--line);
+  }
+  .dlg-head h3 { margin: 0 0 3px; font-size: 15px; }
+  .dlg-head p  { margin: 0; font-size: 12.5px; color: var(--muted); }
+  .dlg-body { padding: 16px 18px; }
+  .dlg-foot {
+    padding: 12px 18px;
+    background: var(--paper);
+    border-top: 1px solid var(--line);
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    align-items: center;
+  }
+  .dlg-foot .spacer { flex: 1; }
+  .hint { font-size: 11.5px; color: var(--muted); margin: 4px 0 0; }
+  .hint a { color: var(--accent); }
+
+  #detail .dlg-body { font-size: 13px; }
+  .kv { display: grid; grid-template-columns: 120px 1fr; gap: 5px 12px; }
+  .kv dt { color: var(--muted); text-align: right; }
+  .kv dd { margin: 0; }
+  .kv dd.note { white-space: pre-wrap; }
+
+  @media (max-width: 1000px) {
+    html, body { height: auto; }
+    body { display: block; overflow: visible; }
+    .bar { position: sticky; top: 0; z-index: 5; }
+    main { display: block; }
+    .pane { display: block; overflow: visible; }
+    .form-wrap { overflow: visible; }
+    .tablewrap { overflow-x: auto; }
+    .stats { display: none; }
+  }
+
+  @media (max-width: 620px) {
+    .grid { grid-template-columns: 1fr; gap: 3px 0; }
+    .grid > label { text-align: left; padding-top: 6px; }
+    .grid > .start { padding-top: 0; }
+    .row { flex-wrap: wrap; }
+    .toolbar { flex-wrap: wrap; }
+    .toolbar input[type="text"] { flex: 1 1 100%; }
+    .bar { gap: 10px; padding: 0 10px; }
+    .brand span, #sync-text { display: none; }
+    table { min-width: 700px; }
+    .kv { grid-template-columns: 1fr; gap: 1px 0; }
+    .kv dt { text-align: left; padding-top: 6px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="gate" hidden>
+  <div class="gate-card">
+    <div class="gate-mark"><i></i><i></i><i></i><i></i></div>
+    <h1>Case Log</h1>
+    <p class="sub" id="gate-sub">Who's using this?</p>
+    <div class="gate-status" id="gate-status"></div>
+
+    <div id="gate-connect" hidden>
+      <button class="primary" id="btn-pick" style="font-size:15px;padding:12px 22px">
+        Choose the shared folder
+      </button>
+      <p class="hint" style="margin-top:12px">
+        Pick the folder on your network share where the case log lives,
+        e.g. <span class="mono">\\server\support\caselog</span>
+      </p>
+    </div>
+
+    <div id="gate-people">
+      <div class="who" id="who"></div>
+      <div class="gate-add">
+        <input type="text" id="gate-new" placeholder="Someone else — type a name" autocomplete="off">
+        <button id="gate-add-btn">Add</button>
+      </div>
+    </div>
+
+    <div class="gate-foot">
+      <span id="gate-repo"></span>
+      <button class="ghost" id="gate-settings">Shared folder</button>
+    </div>
+  </div>
+</div>
+
+<header class="bar">
+  <div class="brand">Case Log <span id="whoami">—</span></div>
+  <div class="stats">
+    <span>total <b id="st-total">0</b></span>
+    <span>today <b id="st-today">0</b></span>
+    <span>open <b id="st-open">0</b></span>
+  </div>
+  <div class="sync" id="sync" data-state="off">
+    <span class="dot"></span><span id="sync-text">not connected</span>
+  </div>
+  <button class="ghost" id="btn-switch">Switch user</button>
+  <button class="ghost" id="btn-settings">Folder</button>
+</header>
+
+<main>
+  <div class="tabs">
+    <button class="tab on" id="tab-new" data-pane="new">New case</button>
+    <button class="tab" id="tab-log" data-pane="log">Log <span class="count" id="log-badge">0</span></button>
+  </div>
+
+  <!-- ============ new case ============ -->
+  <section class="pane" id="pane-new">
+    <div class="form-wrap">
+      <div class="banner" id="form-banner"></div>
+
+      <!-- ---- product ---- -->
+      <div class="block">
+        <div class="block-head">
+          <h3>Product</h3>
+          <span class="picked-label" id="picked-label">nothing selected</span>
+        </div>
+
+        <div class="chips" id="common"></div>
+
+        <div class="combo">
+          <input type="text" id="f-product" autocomplete="off" spellcheck="false"
+                 placeholder="Type a model — E, E1, E12, E124…"
+                 role="combobox" aria-expanded="false" aria-autocomplete="list">
+          <button type="button" id="btn-browse">Browse</button>
+          <button type="button" id="btn-addprod" title="Add a product to the list">+</button>
+          <div class="menu" id="prod-menu" hidden></div>
+        </div>
+
+        <div class="miller" id="browser" hidden>
+          <div class="mcol" id="col-brand"></div>
+          <div class="mcol" id="col-cat"></div>
+          <div class="mcol" id="col-model"></div>
+        </div>
+      </div>
+
+      <!-- ---- the rest ---- -->
+      <div class="block">
+        <div class="grid2">
+          <label for="f-serial">Serial no.</label>
+          <input type="text" id="f-serial" autocomplete="off" placeholder="if available">
+
+          <label for="f-order">Order no.</label>
+          <input type="text" id="f-order" autocomplete="off" placeholder="if available">
+
+          <div class="full" id="dupe-hint" hidden></div>
+
+          <label for="f-company">Company</label>
+          <input type="text" id="f-company" list="l-company" autocomplete="off">
+          <datalist id="l-company"></datalist>
+
+          <label for="f-installer">Installer</label>
+          <input type="text" id="f-installer" list="l-installer" autocomplete="off">
+          <datalist id="l-installer"></datalist>
+
+          <label>Level</label>
+          <div class="span" style="display:flex;align-items:center">
+            <div class="meter" id="meter" role="radiogroup" aria-label="Perceived level of the installer"></div>
+            <span class="meter-label" id="meter-label"></span>
+          </div>
+
+          <label for="f-date">Date</label>
+          <div class="row">
+            <input type="date" id="f-date" style="width:auto">
+            <button type="button" id="btn-today">Today</button>
+          </div>
+
+          <label for="f-duration">Minutes</label>
+          <div class="row">
+            <input type="number" id="f-duration" min="0" step="1" style="width:74px">
+            <button type="button" id="btn-timer">Start timer</button>
+            <span class="timer-readout" id="timer-readout">00:00</span>
+            <button type="button" class="ghost" id="btn-timer-reset">Reset</button>
+          </div>
+
+          <label>First call</label>
+          <div class="span row">
+            <label class="check">
+              <input type="checkbox" id="f-first" checked>
+              First call on this case
+            </label>
+            <span class="row" id="related-wrap" hidden>
+              <label for="f-related" style="color:var(--muted);font-size:12.5px">follow-up to case</label>
+              <input type="text" id="f-related" style="width:92px" placeholder="e.g. AN-12" autocomplete="off">
+            </span>
+          </div>
+
+          <label for="f-status">Outcome</label>
+          <select id="f-status" class="span" style="width:auto">
+            <option>Resolved</option>
+            <option>Follow-up needed</option>
+            <option>Escalated</option>
+            <option>Waiting on customer</option>
+          </select>
+
+          <label for="f-notes" class="start">Notes</label>
+          <textarea id="f-notes" class="span" rows="4"></textarea>
+
+          <div class="full actions">
+            <button class="primary" id="btn-save">Save case<kbd>Ctrl+S</kbd></button>
+            <button id="btn-clear">Clear<kbd>Ctrl+N</kbd></button>
+            <span class="spacer"></span>
+            <span class="editing-flag" id="editing-flag" hidden></span>
+            <button class="ghost" id="btn-cancel-edit" hidden>Cancel edit</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ log ============ -->
+  <section class="pane" id="pane-log" hidden>
+    <div class="toolbar" style="padding-top:12px">
+      <input type="text" id="q" placeholder="Search company, installer, product, serial, order, notes or case number">
+      <button id="btn-refresh">Refresh<kbd>F5</kbd></button>
+      <button id="btn-export">Export</button>
+      <span class="meter-label" id="log-count"></span>
+    </div>
+    <div class="tablewrap">
+      <table id="tbl">
+        <colgroup>
+          <col style="width:6%"><col style="width:13%"><col style="width:15%">
+          <col style="width:15%"><col style="width:12%"><col style="width:5%">
+          <col style="width:5%"><col style="width:18%"><col style="width:11%">
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="num">Case</th>
+            <th>Date</th>
+            <th>Company</th>
+            <th>Product</th>
+            <th>Installer</th>
+            <th>Lvl</th>
+            <th class="num">Min</th>
+            <th>Outcome</th>
+            <th>By</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div class="empty" id="empty">No shared folder chosen yet.</div>
+    </div>
+  </section>
+</main>
+
+<!-- ============ settings ============ -->
+<dialog id="settings">
+  <div class="dlg-head">
+    <h3>Shared folder</h3>
+    <p>Where the case log is kept. All three of you point at the same folder.</p>
+  </div>
+  <div class="dlg-body">
+    <div class="banner" id="settings-banner"></div>
+    <dl class="kv" style="grid-template-columns:110px 1fr">
+      <dt>Folder</dt><dd id="s-folder" class="mono">—</dd>
+      <dt>Signed in as</dt><dd id="s-user">—</dd>
+      <dt>Logging as</dt><dd id="s-prefix" class="mono">—</dd>
+      <dt>People</dt><dd id="s-people">—</dd>
+    </dl>
+    <p class="hint">
+      Each person's cases are kept in their own file in this folder, so two people
+      saving at the same moment can never overwrite each other. Back the folder up
+      the way you back up any other shared folder.
+    </p>
+  </div>
+  <div class="dlg-foot">
+    <button class="ghost" id="s-forget">Forget this folder</button>
+    <span class="spacer"></span>
+    <button id="s-change">Choose a different folder</button>
+    <button class="primary" id="s-cancel">Close</button>
+  </div>
+</dialog>
+
+<!-- ============ add a product ============ -->
+<dialog id="addprod">
+  <div class="dlg-head">
+    <h3>Add a product</h3>
+    <p>It becomes available to everyone the next time they read the folder.</p>
+  </div>
+  <div class="dlg-body">
+    <div class="banner" id="addprod-banner"></div>
+    <div class="grid" style="grid-template-columns:96px 1fr">
+      <label for="a-model">Model</label>
+      <input type="text" id="a-model" autocomplete="off" placeholder="e.g. E124S">
+
+      <label for="a-brand">Fabrikat</label>
+      <input type="text" id="a-brand" list="l-brand" autocomplete="off" placeholder="DAAB, FAAC, Magnetic…">
+      <datalist id="l-brand"></datalist>
+
+      <label for="a-cat">Kategori</label>
+      <input type="text" id="a-cat" list="l-cat" autocomplete="off" placeholder="Styrautomatiker…">
+      <datalist id="l-cat"></datalist>
+    </div>
+    <p class="hint">
+      Type a new fabrikat or kategori to create one — they aren't fixed lists.
+    </p>
+  </div>
+  <div class="dlg-foot">
+    <button id="a-cancel">Cancel</button>
+    <button class="primary" id="a-save">Add and select</button>
+  </div>
+</dialog>
+
+<!-- ============ case detail ============ -->
+<dialog id="detail">
+  <div class="dlg-head">
+    <h3 id="d-title">Case</h3>
+    <p id="d-sub"></p>
+  </div>
+  <div class="dlg-body">
+    <dl class="kv" id="d-body"></dl>
+  </div>
+  <div class="dlg-foot">
+    <button id="d-followup">Log follow-up</button>
+    <button id="d-edit">Edit</button>
+    <span class="meter-label" id="d-note" hidden></span>
+    <span class="spacer"></span>
+    <button class="primary" id="d-close">Close</button>
+  </div>
+</dialog>
+
+<script>
+"use strict";
+
+/* ==========================================================================
+   Case Log — a shared support-call log kept in a folder on your network share.
+
+   No server, no accounts, no tokens. One HTML file that reads and writes a
+   folder directly, using the browser's File System Access API.
+
+   Why it cannot lose a case
+   -------------------------
+   Three machines write into one folder over SMB, and a browser cannot take a
+   lock on a file. So the design gives every file exactly one writer:
+
+       caselog-anna.json     only Anna's machine writes this
+       caselog-bjorn.json    only Björn's machine writes this
+       caselog-kalle.json    only Kalle's machine writes this
+
+   Everyone reads all of them and merges. Nobody ever writes a file that isn't
+   theirs, so the lost-update problem simply cannot occur — there is nothing to
+   lock, nothing to retry, and no conflict to resolve.
+
+   Case numbers follow from the same rule. A single global counter would need
+   coordination between the machines, so numbers are per-person instead:
+   AN-1, AN-2 for Anna, BJ-1 for Björn. Each counter depends only on a file its
+   owner alone writes, so a collision is impossible by construction.
+   ========================================================================== */
+
+const DB_NAME   = "caselog";
+const DB_STORE  = "handles";
+const LS_DRAFT  = "caselog.draft.v1";
+const SS_USER   = "caselog.user";
+const FILE_RE   = /^caselog-([a-z0-9_-]+)\.json$/i;
+const POLL_MS   = 30000;
+
+const LEVELS = {
+  1: "1 — novice",
+  2: "2 — basic",
+  3: "3 — competent",
+  4: "4 — experienced",
+  5: "5 — expert",
+};
+
+const STATUS_CLASS = {
+  "Resolved": "resolved",
+  "Follow-up needed": "followup",
+  "Escalated": "escalated",
+  "Waiting on customer": "waiting",
+};
+
+/* ---------- helpers ---------- */
+
+const $ = (id) => document.getElementById(id);
+
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, (c) => (
+    { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
+  ));
+}
+
+function todayISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/* A filename-safe key from a person's name. Handles å/ä/ö and the like. */
+function slugify(name) {
+  const folded = name.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/ø/gi, "o").replace(/æ/gi, "ae").replace(/ß/g, "ss");
+  const slug = folded.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  return slug || "user";
+}
+
+/* Initials for the case-number prefix: "Björn" -> "BJ", "Anna Lind" -> "AL". */
+function prefixFor(name, taken) {
+  const folded = name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+  const words = folded.split(/\s+/).filter(Boolean);
+  let base = words.length > 1
+    ? (words[0][0] + words[1][0])
+    : (folded.replace(/[^A-Z]/g, "").slice(0, 2) || "XX");
+  base = base.replace(/[^A-Z]/g, "") || "XX";
+  if (!taken.includes(base)) return base;
+  for (let i = 2; i < 99; i++) {
+    const cand = base[0] + String(i);
+    if (!taken.includes(cand)) return cand;
+  }
+  return base + "X";
+}
+
+/* ---------- remembering the folder between launches ---------- */
+
+function idb() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(DB_STORE);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function rememberFolder(handle) {
+  try {
+    const db = await idb();
+    await new Promise((res, rej) => {
+      const tx = db.transaction(DB_STORE, "readwrite");
+      tx.objectStore(DB_STORE).put(handle, "dir");
+      tx.oncomplete = res;
+      tx.onerror = () => rej(tx.error);
+    });
+  } catch (e) { /* the picker will simply run again next time */ }
+}
+
+async function recallFolder() {
+  try {
+    const db = await idb();
+    return await new Promise((res, rej) => {
+      const tx = db.transaction(DB_STORE, "readonly");
+      const req = tx.objectStore(DB_STORE).get("dir");
+      req.onsuccess = () => res(req.result || null);
+      req.onerror = () => rej(req.error);
+    });
+  } catch (e) { return null; }
+}
+
+async function forgetFolder() {
+  try {
+    const db = await idb();
+    await new Promise((res) => {
+      const tx = db.transaction(DB_STORE, "readwrite");
+      tx.objectStore(DB_STORE).delete("dir");
+      tx.oncomplete = res;
+      tx.onerror = res;
+    });
+  } catch (e) {}
+}
+
+/* ---------- the folder ---------- */
+
+let dir = null;        // FileSystemDirectoryHandle
+let people = [];       // [{slug, name, prefix, cases, handle}]
+let me = null;         // the entry in `people` for whoever is signed in
+
+const supported = () => typeof window.showDirectoryPicker === "function";
+
+async function pickFolder() {
+  const handle = await window.showDirectoryPicker({ mode: "readwrite", id: "caselog" });
+  const perm = await handle.requestPermission({ mode: "readwrite" });
+  if (perm !== "granted") throw new Error("Writing to that folder wasn't allowed.");
+  dir = handle;
+  await rememberFolder(handle);
+  return handle;
+}
+
+/** Returns "granted" | "prompt" | "denied" | "none" for the remembered folder. */
+async function folderPermission() {
+  if (!dir) return "none";
+  try { return await dir.queryPermission({ mode: "readwrite" }); }
+  catch (e) { return "denied"; }
+}
+
+async function regrantFolder() {
+  const perm = await dir.requestPermission({ mode: "readwrite" });
+  if (perm !== "granted") throw new Error("Access to the folder wasn't allowed.");
+  return perm;
+}
+
+/* ---------- reading and writing ---------- */
+
+async function readEveryone() {
+  const found = [];
+  for await (const entry of dir.values()) {
+    if (entry.kind !== "file") continue;
+    const m = entry.name.match(FILE_RE);
+    if (!m) continue;
+    try {
+      const text = await (await entry.getFile()).text();
+      if (!text.trim()) continue;
+      const data = JSON.parse(text);
+      found.push({
+        slug: m[1].toLowerCase(),
+        name: data.name || m[1],
+        prefix: data.prefix || "XX",
+        cases: Array.isArray(data.cases) ? data.cases : [],
+        products: Array.isArray(data.products) ? data.products : [],
+        handle: entry,
+      });
+    } catch (e) {
+      // One unreadable file must not hide everybody else's cases.
+      console.warn("Skipping unreadable file", entry.name, e);
+    }
+  }
+  found.sort((a, b) => a.name.localeCompare(b.name));
+  return found;
+}
+
+/* Only ever called for the signed-in person's own file. */
+async function writeMine() {
+  if (!me) throw new Error("Nobody is signed in.");
+  const fh = await dir.getFileHandle(`caselog-${me.slug}.json`, { create: true });
+  const w = await fh.createWritable();
+  try {
+    await w.write(JSON.stringify(
+      { name: me.name, prefix: me.prefix, products: me.products || [], cases: me.cases },
+      null, 1));
+  } finally {
+    await w.close();   // commits the swap file; leaving it open would lose the write
+  }
+  me.handle = fh;
+}
+
+/* ---------- merged view ---------- */
+
+let cases = [];        // everyone's, newest first
+let editingId = null;
+let selected = null;
+let level = 3;
+let pollTimer = null;
+
+function remerge() {
+  cases = [];
+  for (const p of people) {
+    for (const c of p.cases) cases.push({ ...c, owner: p.slug, by: p.name });
+  }
+  cases.sort((a, b) => String(b.at || "").localeCompare(String(a.at || "")) ||
+                       String(b.id).localeCompare(String(a.id)));
+}
+
+const findCase = (id) => cases.find((c) => c.id === id);
+const isMine = (c) => Boolean(me && c && c.owner === me.slug);
+
+function nextId() {
+  let n = 0;
+  for (const c of me.cases) {
+    const m = String(c.id).match(/-(\d+)$/);
+    if (m) n = Math.max(n, Number(m[1]));
+  }
+  return `${me.prefix}-${n + 1}`;
+}
+
+/* ---------- status ---------- */
+
+function setSync(state, text) {
+  $("sync").dataset.state = state;
+  $("sync-text").textContent = text;
+}
+
+function banner(id, kind, msg) {
+  const el = $(id);
+  if (!msg) { el.className = "banner"; el.textContent = ""; return; }
+  el.className = `banner show ${kind}`;
+  el.textContent = msg;
+}
+
+function stamp() {
+  return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+/* ---------- refresh ---------- */
+
+async function refresh(quiet) {
+  if (!dir) { setSync("off", "no folder"); return; }
+  if (!quiet) setSync("busy", "reading…");
+  try {
+    people = await readEveryone();
+    if (me) {
+      const mine = people.find((p) => p.slug === me.slug);
+      if (mine) me = mine;
+      else people.push(me);           // our file isn't written until the first save
+    }
+    remerge();
+    refreshLists();
+    renderCommon();
+    if (!$("browser").hidden) renderBrowser();
+    renderDupeHint();
+    render();
+    setSync("ok", `read ${stamp()}`);
+    if (!quiet) banner("form-banner", null, null);
+  } catch (e) {
+    setSync("error", "folder unreachable");
+    if (!quiet) {
+      banner("form-banner", "error",
+        `Could not read the shared folder — is the network drive connected? (${e.message})`);
+    }
+  }
+}
+
+/* ---------- rendering ---------- */
+
+function levelBars(n) {
+  let out = '<span class="lvl">';
+  for (let i = 1; i <= 5; i++) out += `<i class="${i <= n ? "on" : ""}"></i>`;
+  return out + "</span>";
+}
+
+function matches(c, q) {
+  if (!q) return true;
+  const needle = q.toLowerCase();
+  return [c.id, c.company, c.installer, c.product, c.brand, c.serial, c.order,
+          c.notes, c.by, c.status]
+    .some((v) => String(v || "").toLowerCase().includes(needle));
+}
+
+function render() {
+  const q = $("q").value.trim();
+  const rows = cases.filter((c) => matches(c, q));
+
+  $("tbody").innerHTML = rows.map((c) => `
+    <tr data-id="${esc(c.id)}" class="${selected === c.id ? "sel" : ""}" tabindex="0">
+      <td class="case">${esc(c.id)}${c.related ? `<br><span class="link-ref">↳${esc(c.related)}</span>` : ""}</td>
+      <td class="date">${esc(c.date)}</td>
+      <td class="trunc">${esc(c.company)}</td>
+      <td class="trunc">${esc(c.product)}${c.brand ? `<br><span class="link-ref" style="color:var(--muted)">${esc(c.brand)}</span>` : ""}</td>
+      <td class="trunc">${esc(c.installer)}</td>
+      <td>${levelBars(c.level)}</td>
+      <td class="num">${c.duration != null ? c.duration : ""}</td>
+      <td><span class="chip ${STATUS_CLASS[c.status] || "waiting"}">${esc(c.status)}</span></td>
+      <td class="trunc">${esc(c.by)}</td>
+    </tr>`).join("");
+
+  const hasAny = rows.length > 0;
+  $("empty").hidden = hasAny;
+  if (!hasAny) {
+    $("empty").textContent = !dir
+      ? "No shared folder chosen yet."
+      : (cases.length === 0
+          ? `No cases yet. Your first one will be ${me ? me.prefix + "-1" : "case 1"}.`
+          : `Nothing matches “${q}”.`);
+  }
+  $("log-count").textContent = hasAny ? `${rows.length}${q ? ` of ${cases.length}` : ""}` : "";
+  $("log-badge").textContent = cases.length;
+
+  const today = todayISO();
+  $("st-total").textContent = cases.length;
+  $("st-today").textContent = cases.filter((c) => c.date === today).length;
+  $("st-open").textContent  = cases.filter((c) => c.status !== "Resolved").length;
+}
+
+function refreshLists() {
+  const fill = (id, key) => {
+    const seen = [...new Set(cases.map((c) => c[key]).filter(Boolean))].sort((a, b) =>
+      a.localeCompare(b, undefined, { sensitivity: "base" }));
+    $(id).innerHTML = seen.map((v) => `<option value="${esc(v)}">`).join("");
+  };
+  fill("l-company", "company");
+  fill("l-installer", "installer");
+}
+
+/* ==========================================================================
+   PRODUCT CATALOG
+   --------------------------------------------------------------------------
+   This is the starter list. Edit it freely — it's the one place products live
+   in this file, and replacing the file in the shared folder updates everyone.
+
+   Format:  ["Fabrikat", "Kategori", "Modell"]
+
+   A kategori only appears under a fabrikat if that fabrikat has products in
+   it, so DAAB shows no Fordonsräknare without any special rule.
+
+   Anything staff add through the + button is stored in their own case file
+   and merged on top of this list, so you never have to edit the file just to
+   log an unusual product.
+   ========================================================================== */
+
+const BRANDS = ["DAAB", "FAAC", "Magnetic", "Cometa"];
+
+const CATEGORIES = [
+  "Styrautomatiker",
+  "Tilläggsautomatiker",
+  "Motorspel",
+  "Tillbehör",
+  "Fordonsräknare",
+  "Vägbom",
+];
+
+const CATALOG = [
+  // ---- DAAB ----
+  ["DAAB", "Styrautomatiker", "EP102"],
+  ["DAAB", "Styrautomatiker", "EP103"],
+  ["DAAB", "Styrautomatiker", "EP104"],
+  ["DAAB", "Styrautomatiker", "EP105"],
+  ["DAAB", "Styrautomatiker", "EP"],
+  ["DAAB", "Styrautomatiker", "EV"],
+  ["DAAB", "Styrautomatiker", "EVS"],
+  ["DAAB", "Styrautomatiker", "EF"],
+  ["DAAB", "Styrautomatiker", "EO"],
+  ["DAAB", "Styrautomatiker", "EK"],
+  ["DAAB", "Styrautomatiker", "EL"],
+  ["DAAB", "Styrautomatiker", "EH Handstyrning"],
+  ["DAAB", "Styrautomatiker", "PA"],
+  ["DAAB", "Styrautomatiker", "RP"],
+  ["DAAB", "Styrautomatiker", "DA"],
+  ["DAAB", "Tillbehör", "DBG5"],
+
+  // ---- FAAC ----
+  ["FAAC", "Styrautomatiker", "E124"],
+  ["FAAC", "Styrautomatiker", "E124S"],
+  ["FAAC", "Vägbom", "950N2"],
+  ["FAAC", "Vägbom", "952"],
+  ["FAAC", "Motorspel", "1400 Air"],
+  ["FAAC", "Tillbehör", "Simply Connect"],
+
+  // ---- Magnetic ----
+  ["Magnetic", "Styrautomatiker", "MGC"],
+];
+
+/* Shown as one-click buttons above the search box. Keep this short — the
+   value is muscle memory, so the order should stay put. */
+const COMMON = ["EP105", "DBG5", "Simply Connect", "MGC", "950N2", "952", "1400 Air"];
+
+/* ---------- catalog helpers ---------- */
+
+/** Built-in catalog plus everything anybody has added, de-duplicated. */
+function allProducts() {
+  const out = [];
+  const seen = new Set();
+  const add = (brand, cat, model) => {
+    const key = (brand + "|" + model).toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push({ brand, cat, model });
+  };
+  for (const [brand, cat, model] of CATALOG) add(brand, cat, model);
+  for (const p of people) {
+    for (const c of (p.products || [])) {
+      if (c && c.model) add(c.brand || "Övrigt", c.cat || "Övrigt", c.model);
+    }
+  }
+  return out;
+}
+
+const norm = (s) => String(s || "").toLowerCase().replace(/[\s\-_.]/g, "");
+
+const byModel = (a, b) => a.model.localeCompare(b.model, "sv", { numeric: true, sensitivity: "base" });
+
+/**
+ * Prefix matches first — typing E12 should not surface EP102 — then anything
+ * else containing the text, so a fabrikat name or a mid-string code still finds
+ * things. Alphabetical within each group.
+ */
+function searchProducts(q) {
+  const n = norm(q);
+  if (!n) return [];
+  const all = allProducts();
+  const starts = [], contains = [];
+  for (const p of all) {
+    const m = norm(p.model);
+    if (m.startsWith(n)) starts.push(p);
+    else if (m.includes(n) || norm(p.brand).includes(n)) contains.push(p);
+  }
+  starts.sort(byModel);
+  contains.sort(byModel);
+  return { starts, contains };
+}
+
+function brandsInUse() {
+  const counts = new Map();
+  for (const p of allProducts()) counts.set(p.brand, (counts.get(p.brand) || 0) + 1);
+  for (const b of BRANDS) if (!counts.has(b)) counts.set(b, 0);
+  return [...counts.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0], "sv"))
+    .map(([name, n]) => ({ name, n }));
+}
+
+function catsFor(brand) {
+  const counts = new Map();
+  for (const p of allProducts()) {
+    if (p.brand !== brand) continue;
+    counts.set(p.cat, (counts.get(p.cat) || 0) + 1);
+  }
+  // Keep the house order, then anything unexpected on the end.
+  const ordered = CATEGORIES.filter((c) => counts.has(c))
+    .concat([...counts.keys()].filter((c) => !CATEGORIES.includes(c)).sort());
+  return ordered.map((name) => ({ name, n: counts.get(name) }));
+}
+
+function modelsFor(brand, cat) {
+  return allProducts().filter((p) => p.brand === brand && p.cat === cat).sort(byModel);
+}
+
+/* ---------- the selection ---------- */
+
+let picked = null;          // {brand, cat, model} | {model, free:true}
+let menuItems = [];         // what's currently in the dropdown
+let menuIndex = -1;
+let browseBrand = null;
+let browseCat = null;
+
+function setPickedQuiet(p) {
+  picked = p;
+  paintPicked();
+  renderCommon();
+}
+
+function paintPicked() {
+  const p = picked;
+  const el = $("picked-label");
+  if (!p) {
+    el.className = "picked-label";
+    el.textContent = "nothing selected";
+  } else {
+    el.className = "picked-label set";
+    el.innerHTML = p.free
+      ? `${esc(p.model)}<span class="free">typed in</span>`
+      : `${esc(p.model)} <span class="brand">· ${esc(p.brand)} · ${esc(p.cat)}</span>`;
+  }
+}
+
+function setPicked(p) {
+  picked = p;
+  paintPicked();
+  $("f-product").value = p ? p.model : "";
+  renderCommon();
+  saveDraft();
+}
+
+function pickFromCatalog(entry) {
+  setPicked({ brand: entry.brand, cat: entry.cat, model: entry.model });
+  closeMenu();
+  $("f-serial").focus();
+}
+
+/* ---------- common chips ---------- */
+
+function renderCommon() {
+  const all = allProducts();
+  const html = COMMON.map((model) => {
+    const hit = all.find((p) => norm(p.model) === norm(model));
+    const on = picked && norm(picked.model) === norm(model);
+    return `<button type="button" class="chip-btn${on ? " on" : ""}" data-model="${esc(model)}"
+             title="${hit ? esc(hit.brand + " · " + hit.cat) : "not in the list yet"}">${esc(model)}</button>`;
+  }).join("");
+  $("common").innerHTML = html;
+}
+
+/* ---------- dropdown ---------- */
+
+function openMenu(q) {
+  const { starts, contains } = searchProducts(q);
+  menuItems = [];
+  let html = "";
+
+  const row = (p, i) => {
+    const m = esc(p.model);
+    const n = norm(q).length;
+    const shown = norm(p.model).startsWith(norm(q))
+      ? `<mark>${esc(p.model.slice(0, matchLen(p.model, q)))}</mark>${esc(p.model.slice(matchLen(p.model, q)))}`
+      : m;
+    return `<div class="menu-item" data-i="${i}">
+              <span class="model">${shown}</span>
+              <span class="meta">${esc(p.brand)} · ${esc(p.cat)}</span>
+            </div>`;
+  };
+
+  if (starts.length) {
+    html += `<div class="menu-group">Starts with “${esc(q)}”</div>`;
+    for (const p of starts) { html += row(p, menuItems.length); menuItems.push(p); }
+  }
+  if (contains.length) {
+    html += `<div class="menu-group">Also matching</div>`;
+    for (const p of contains) { html += row(p, menuItems.length); menuItems.push(p); }
+  }
+
+  const typed = q.trim();
+  if (typed) {
+    const exact = menuItems.some((p) => norm(p.model) === norm(typed));
+    if (!exact) {
+      html += `<div class="menu-item freetext" data-i="${menuItems.length}">
+                 <span class="model">Use “${esc(typed)}” as typed</span>
+                 <span class="meta">not in the list</span>
+               </div>`;
+      menuItems.push({ model: typed, free: true });
+    }
+  }
+
+  if (!html) html = `<div class="menu-empty">Nothing matches “${esc(q)}”.</div>`;
+
+  $("prod-menu").innerHTML = html;
+  $("prod-menu").hidden = false;
+  $("f-product").setAttribute("aria-expanded", "true");
+  menuIndex = menuItems.length ? 0 : -1;
+  paintMenu();
+}
+
+/** How many leading characters of the model the query actually covers. */
+function matchLen(model, q) {
+  const n = norm(q).length;
+  let count = 0, seen = 0;
+  for (const ch of model) {
+    count++;
+    if (!/[\s\-_.]/.test(ch)) seen++;
+    if (seen >= n) break;
+  }
+  return count;
+}
+
+function paintMenu() {
+  const nodes = $("prod-menu").querySelectorAll(".menu-item");
+  nodes.forEach((el) => {
+    const on = Number(el.dataset.i) === menuIndex;
+    el.classList.toggle("active", on);
+    if (on) el.scrollIntoView({ block: "nearest" });
+  });
+}
+
+function closeMenu() {
+  $("prod-menu").hidden = true;
+  $("f-product").setAttribute("aria-expanded", "false");
+  menuItems = [];
+  menuIndex = -1;
+}
+
+function chooseMenuItem(i) {
+  const p = menuItems[i];
+  if (!p) return;
+  if (p.free) {
+    setPicked({ model: p.model, free: true });
+    closeMenu();
+    $("f-serial").focus();
+  } else {
+    pickFromCatalog(p);
+  }
+}
+
+/* ---------- browse columns ---------- */
+
+function toggleBrowse() {
+  const b = $("browser");
+  b.hidden = !b.hidden;
+  $("btn-browse").textContent = b.hidden ? "Browse" : "Hide";
+  if (!b.hidden) {
+    if (!browseBrand) browseBrand = (picked && picked.brand) || BRANDS[0];
+    if (!browseCat) {
+      const cats = catsFor(browseBrand);
+      browseCat = (picked && picked.cat) || (cats[0] && cats[0].name) || null;
+    }
+    renderBrowser();
+  }
+}
+
+function renderBrowser() {
+  const brands = brandsInUse();
+  $("col-brand").innerHTML =
+    `<div class="mcol-head">Fabrikat</div>` +
+    brands.map((b) => `<div class="mitem${b.name === browseBrand ? " on" : ""}" data-brand="${esc(b.name)}">
+        <span>${esc(b.name)}</span><span class="n">${b.n}</span></div>`).join("");
+
+  const cats = browseBrand ? catsFor(browseBrand) : [];
+  $("col-cat").innerHTML =
+    `<div class="mcol-head">Kategori</div>` +
+    (cats.length
+      ? cats.map((c) => `<div class="mitem${c.name === browseCat ? " on" : ""}" data-cat="${esc(c.name)}">
+            <span>${esc(c.name)}</span><span class="n">${c.n}</span></div>`).join("")
+      : `<div class="mcol-empty">No products for ${esc(browseBrand || "")} yet.</div>`);
+
+  const models = (browseBrand && browseCat) ? modelsFor(browseBrand, browseCat) : [];
+  $("col-model").innerHTML =
+    `<div class="mcol-head">Modell</div>` +
+    models.map((m) => `<div class="mitem${picked && !picked.free && picked.model === m.model && picked.brand === m.brand ? " on" : ""}"
+         data-model="${esc(m.model)}">${esc(m.model)}</div>`).join("") +
+    `<div class="mitem add" data-add="1">+ Add a product here</div>`;
+}
+
+/* ---------- add-product dialog ---------- */
+
+function openAddProduct(prefill) {
+  $("a-model").value = (prefill && prefill.model) || $("f-product").value.trim();
+  $("a-brand").value = (prefill && prefill.brand) || browseBrand || "";
+  $("a-cat").value   = (prefill && prefill.cat) || browseCat || "";
+  $("l-brand").innerHTML = brandsInUse().map((b) => `<option value="${esc(b.name)}">`).join("");
+  $("l-cat").innerHTML = [...new Set(CATEGORIES.concat(allProducts().map((p) => p.cat)))]
+    .map((c) => `<option value="${esc(c)}">`).join("");
+  banner("addprod-banner", null, null);
+  $("addprod").showModal();
+  $("a-model").focus();
+}
+
+async function saveNewProduct() {
+  const model = $("a-model").value.trim();
+  const brand = $("a-brand").value.trim() || "Övrigt";
+  const cat   = $("a-cat").value.trim() || "Övrigt";
+  if (!model) { banner("addprod-banner", "warn", "Give the product a model name."); return; }
+  if (!me)    { banner("addprod-banner", "warn", "Click your name first."); return; }
+
+  const clash = allProducts().find((p) => norm(p.model) === norm(model) && norm(p.brand) === norm(brand));
+  if (clash) {
+    $("addprod").close();
+    pickFromCatalog(clash);
+    banner("form-banner", "info", `${clash.model} was already in the list.`);
+    return;
+  }
+
+  $("a-save").disabled = true;
+  const before = (me.products || []).slice();
+  try {
+    me.products = (me.products || []).concat([{ brand, cat, model }]);
+    await writeMine();
+  } catch (e) {
+    me.products = before;
+    banner("addprod-banner", "error", `Could not write to the shared folder: ${e.message}`);
+    $("a-save").disabled = false;
+    return;
+  }
+  $("a-save").disabled = false;
+  $("addprod").close();
+  browseBrand = brand;
+  browseCat = cat;
+  if (!$("browser").hidden) renderBrowser();
+  pickFromCatalog({ brand, cat, model });
+  banner("form-banner", "info", `${model} added under ${brand} · ${cat}.`);
+}
+
+/* ---------- tabs ---------- */
+
+function showPane(which) {
+  const isNew = which === "new";
+  $("pane-new").hidden = !isNew;
+  $("pane-log").hidden = isNew;
+  $("tab-new").classList.toggle("on", isNew);
+  $("tab-log").classList.toggle("on", !isNew);
+  if (!isNew) { render(); $("q").focus(); }
+  else $("f-product").focus();
+}
+
+/* ---------- same unit / same order ---------- */
+
+/* Serial and order numbers get typed with and without dashes and spaces, so
+   compare them loosely. */
+const normId = (v) => String(v || "").toLowerCase().replace(/[\s\-_.\/]/g, "");
+
+/**
+ * Cases sharing this serial or order number. Derived on the fly rather than
+ * stored, so older cases are matched too and the links stay correct as new
+ * cases arrive.
+ */
+function identifierMatches(serial, order, excludeId) {
+  const s = normId(serial), o = normId(order);
+  const bySerial = [], byOrder = [];
+  for (const c of cases) {
+    if (excludeId && c.id === excludeId) continue;
+    if (s && normId(c.serial) === s) bySerial.push(c);
+    else if (o && normId(c.order) === o) byOrder.push(c);
+  }
+  const oldest = (a, b) => String(a.at || "").localeCompare(String(b.at || ""));
+  return { bySerial: bySerial.sort(oldest), byOrder: byOrder.sort(oldest) };
+}
+
+/** Where a follow-up should point: the first call in that thread. */
+function originOf(c) {
+  return (!c.first && c.related) ? c.related : c.id;
+}
+
+function renderDupeHint() {
+  const el = $("dupe-hint");
+  const serial = $("f-serial").value.trim();
+  const order = $("f-order").value.trim();
+  const { bySerial, byOrder } = identifierMatches(serial, order, editingId);
+
+  if (!bySerial.length && !byOrder.length) {
+    el.hidden = true;
+    el.innerHTML = "";
+    return;
+  }
+
+  const hit = (c) => `<div class="hit" data-open="${esc(c.id)}">
+      <span class="cid">${esc(c.id)}</span>
+      <span>${esc(c.product)}</span>
+      <span class="meta">${esc(c.company) || "—"} · ${esc(c.date)} · ${esc(c.by)}</span>
+    </div>`;
+
+  let html = "";
+  if (bySerial.length) {
+    html += `<strong>Serial ${esc(serial)} has been in before — same unit.</strong>
+             <div class="rows">${bySerial.map(hit).join("")}</div>`;
+  }
+  if (byOrder.length) {
+    html += `${bySerial.length ? '<div style="height:7px"></div>' : ""}
+             <strong>Order ${esc(order)} has been in before.</strong>
+             <div class="rows">${byOrder.map(hit).join("")}</div>`;
+  }
+
+  // Offer to tie this case to the existing thread, preferring the serial match
+  // because that is the same physical unit rather than merely the same order.
+  const best = bySerial[0] || byOrder[0];
+  if (best && $("f-first").checked) {
+    const origin = originOf(best);
+    html += `<div class="acts">
+        <button type="button" data-link="${esc(origin)}">Make this a follow-up of ${esc(origin)}</button>
+      </div>`;
+  }
+
+  el.innerHTML = `<div class="dupe">${html}</div>`;
+  el.hidden = false;
+}
+
+/* ---------- level meter ---------- */
+
+function buildMeter() {
+  const m = $("meter");
+  m.innerHTML = "";
+  for (let i = 1; i <= 5; i++) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.dataset.level = i;
+    b.setAttribute("role", "radio");
+    b.setAttribute("aria-label", LEVELS[i]);
+    b.addEventListener("click", () => setLevel(i));
+    m.appendChild(b);
+  }
+  setLevel(3);
+}
+
+function setLevel(n) {
+  level = n;
+  [...$("meter").children].forEach((b, i) => {
+    b.classList.toggle("on", i < n);
+    b.setAttribute("aria-checked", String(i + 1 === n));
+  });
+  $("meter-label").textContent = LEVELS[n];
+}
+
+/* ---------- timer ---------- */
+
+let timerRunning = false, timerStart = 0, timerAcc = 0, timerTick = null;
+
+function toggleTimer() {
+  if (timerRunning) {
+    timerAcc += Date.now() - timerStart;
+    timerRunning = false;
+    clearInterval(timerTick);
+    $("btn-timer").textContent = "Resume timer";
+    $("timer-readout").classList.remove("live");
+    $("f-duration").value = Math.max(1, Math.round(timerAcc / 60000));
+  } else {
+    timerStart = Date.now();
+    timerRunning = true;
+    $("btn-timer").textContent = "Stop timer";
+    $("timer-readout").classList.add("live");
+    timerTick = setInterval(paintTimer, 1000);
+    paintTimer();
+  }
+}
+
+function paintTimer() {
+  const ms = timerAcc + (timerRunning ? Date.now() - timerStart : 0);
+  const s = Math.floor(ms / 1000);
+  $("timer-readout").textContent =
+    `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+}
+
+function resetTimer() {
+  clearInterval(timerTick);
+  timerRunning = false; timerAcc = 0; timerStart = 0;
+  $("btn-timer").textContent = "Start timer";
+  $("timer-readout").textContent = "00:00";
+  $("timer-readout").classList.remove("live");
+}
+
+/* ---------- form ---------- */
+
+function clearForm() {
+  editingId = null;
+  $("f-date").value = todayISO();
+  setPicked(null);
+  closeMenu();
+  $("f-serial").value = "";
+  $("f-order").value = "";
+  $("f-company").value = "";
+  $("f-installer").value = "";
+  setLevel(3);
+  $("f-duration").value = "";
+  $("f-first").checked = true;
+  $("f-related").value = "";
+  $("f-status").value = "Resolved";
+  $("f-notes").value = "";
+  resetTimer();
+  toggleRelated();
+  renderDupeHint();
+  $("btn-save").innerHTML = 'Save case<kbd>Ctrl+S</kbd>';
+  $("editing-flag").hidden = true;
+  $("btn-cancel-edit").hidden = true;
+  banner("form-banner", null, null);
+  clearDraft();
+  $("f-product").focus();
+}
+
+function toggleRelated() {
+  $("related-wrap").hidden = $("f-first").checked;
+  if ($("f-first").checked) $("f-related").value = "";
+}
+
+function formHasContent() {
+  return Boolean(
+    picked || $("f-product").value.trim() || $("f-company").value.trim() ||
+    $("f-installer").value.trim() || $("f-serial").value.trim() ||
+    $("f-order").value.trim() || $("f-notes").value.trim() ||
+    $("f-duration").value.trim() || timerRunning
+  );
+}
+
+function collect() {
+  // A model typed but never chosen still counts — nobody should lose a case
+  // because they didn't press Enter on the dropdown.
+  if (!picked && $("f-product").value.trim()) {
+    const typed = $("f-product").value.trim();
+    const hit = allProducts().find((p) => norm(p.model) === norm(typed));
+    setPicked(hit ? { brand: hit.brand, cat: hit.cat, model: hit.model }
+                  : { model: typed, free: true });
+  }
+  if (!picked) {
+    banner("form-banner", "warn", "Pick the product this call was about.");
+    $("f-product").focus();
+    return null;
+  }
+  const product = picked.model;
+  const date = $("f-date").value;
+  if (!date) { banner("form-banner", "warn", "Pick a date for the call."); return null; }
+
+  const durRaw = $("f-duration").value.trim();
+  let duration = null;
+  if (durRaw !== "") {
+    duration = Math.round(Number(durRaw));
+    if (!Number.isFinite(duration) || duration < 0) {
+      banner("form-banner", "warn", "Minutes must be a number, or leave it blank.");
+      return null;
+    }
+  }
+
+  const first = $("f-first").checked;
+  let related = null;
+  if (!first) {
+    related = $("f-related").value.trim().toUpperCase();
+    if (!related) {
+      banner("form-banner", "warn", "This is marked as a follow-up — give the case it follows up on, e.g. AN-12.");
+      $("f-related").focus();
+      return null;
+    }
+    if (related === editingId) {
+      banner("form-banner", "warn", "A case cannot follow up on itself.");
+      return null;
+    }
+    if (!findCase(related)) {
+      banner("form-banner", "warn", `There is no case ${related} in the log.`);
+      $("f-related").focus();
+      return null;
+    }
+  }
+
+  return {
+    date,
+    product,
+    brand: picked.free ? "" : picked.brand,
+    cat: picked.free ? "" : picked.cat,
+    serial: $("f-serial").value.trim(),
+    order: $("f-order").value.trim(),
+    company: $("f-company").value.trim(),
+    installer: $("f-installer").value.trim(),
+    level,
+    duration,
+    first,
+    related,
+    status: $("f-status").value,
+    notes: $("f-notes").value.trim(),
+    at: new Date().toISOString(),
+  };
+}
+
+async function save() {
+  if (!me) { banner("form-banner", "warn", "Click your name first."); return; }
+  const record = collect();
+  if (!record) return;
+
+  $("btn-save").disabled = true;
+  setSync("busy", "saving…");
+
+  const before = me.cases.slice();           // so a failed write changes nothing
+  let savedId;
+  try {
+    if (editingId != null) {
+      const existing = me.cases.find((c) => c.id === editingId);
+      if (!existing) throw new Error("That case is no longer in your file.");
+      Object.assign(existing, record, { id: editingId, at: existing.at });
+      savedId = editingId;
+    } else {
+      savedId = nextId();
+      me.cases.push({ ...record, id: savedId });
+    }
+    await writeMine();
+  } catch (e) {
+    me.cases = before;
+    setSync("error", "save failed");
+    banner("form-banner", "error",
+      `Could not write to the shared folder. Nothing was lost — press Save case to try again. (${e.message})`);
+    $("btn-save").disabled = false;
+    return;
+  }
+
+  const wasEdit = editingId != null;
+  $("btn-save").disabled = false;
+  setSync("ok", `saved ${stamp()}`);
+  remerge();
+  clearForm();
+  refreshLists();
+  render();
+  banner("form-banner", "info", wasEdit ? `Case ${savedId} updated.` : `Saved as case ${savedId}.`);
+}
+
+function loadIntoForm(c) {
+  editingId = c.id;
+  $("f-date").value = c.date;
+  setPicked(c.brand ? { brand: c.brand, cat: c.cat, model: c.product }
+                    : { model: c.product, free: true });
+  $("f-serial").value = c.serial || "";
+  $("f-order").value = c.order || "";
+  $("f-company").value = c.company || "";
+  $("f-installer").value = c.installer || "";
+  setLevel(c.level || 3);
+  $("f-duration").value = c.duration != null ? c.duration : "";
+  $("f-first").checked = !!c.first;
+  $("f-related").value = c.related || "";
+  $("f-status").value = c.status || "Resolved";
+  $("f-notes").value = c.notes || "";
+  toggleRelated();
+  resetTimer();
+  renderDupeHint();
+  $("btn-save").innerHTML = `Update ${esc(c.id)}<kbd>Ctrl+S</kbd>`;
+  $("editing-flag").hidden = false;
+  $("editing-flag").textContent = `editing ${c.id}`;
+  $("btn-cancel-edit").hidden = false;
+  banner("form-banner", null, null);
+  showPane("new");
+  $("f-product").focus();
+}
+
+function startFollowUp(c) {
+  // Chain back to the original, never to the previous follow-up.
+  const origin = (!c.first && c.related) ? c.related : c.id;
+  clearForm();
+  setPicked(c.brand ? { brand: c.brand, cat: c.cat, model: c.product }
+                    : { model: c.product, free: true });
+  $("f-serial").value = c.serial || "";
+  $("f-order").value = c.order || "";
+  $("f-company").value = c.company || "";
+  $("f-installer").value = c.installer || "";
+  setLevel(c.level || 3);
+  $("f-first").checked = false;
+  toggleRelated();
+  $("f-related").value = origin;
+  renderDupeHint();
+  showPane("new");
+  banner("form-banner", "info", `New follow-up to case ${origin}. Add the duration and notes.`);
+  $("f-notes").focus();
+}
+
+/* ---------- draft rescue ---------- */
+
+function saveDraft() {
+  if (editingId != null) return;
+  const d = {
+    date: $("f-date").value, picked,
+    serial: $("f-serial").value, order: $("f-order").value,
+    company: $("f-company").value, installer: $("f-installer").value, level,
+    duration: $("f-duration").value, first: $("f-first").checked,
+    related: $("f-related").value, status: $("f-status").value, notes: $("f-notes").value,
+  };
+  const empty = !d.picked && !d.company && !d.installer && !d.notes && !d.duration;
+  try {
+    if (empty) localStorage.removeItem(LS_DRAFT);
+    else localStorage.setItem(LS_DRAFT, JSON.stringify(d));
+  } catch (e) {}
+}
+
+function clearDraft() { try { localStorage.removeItem(LS_DRAFT); } catch (e) {} }
+
+function restoreDraft() {
+  let d;
+  try { d = JSON.parse(localStorage.getItem(LS_DRAFT) || "null"); } catch (e) { return; }
+  if (!d) return;
+  $("f-date").value = d.date || todayISO();
+  if (d.picked && d.picked.model) setPicked(d.picked);
+  $("f-serial").value = d.serial || "";
+  $("f-order").value = d.order || "";
+  $("f-company").value = d.company || "";
+  $("f-installer").value = d.installer || "";
+  setLevel(d.level || 3);
+  $("f-duration").value = d.duration || "";
+  $("f-first").checked = d.first !== false;
+  $("f-related").value = d.related || "";
+  $("f-status").value = d.status || "Resolved";
+  $("f-notes").value = d.notes || "";
+  toggleRelated();
+  banner("form-banner", "info", "Restored what you had typed before the window closed.");
+}
+
+/* ---------- detail ---------- */
+
+function openDetail(id) {
+  const c = findCase(id);
+  if (!c) return;
+  selected = id;
+  render();
+
+  $("d-title").textContent = `Case ${c.id}`;
+  $("d-sub").textContent = `${c.date} · logged by ${c.by}`;
+
+  const follows = cases.filter((x) => x.related === c.id).map((x) => x.id).join(", ");
+  const sameUnit = identifierMatches(c.serial, c.order, c.id);
+  const idList = (arr) => arr.map((x) =>
+    `<span class="link-ref" style="cursor:pointer" data-jump="${esc(x.id)}">${esc(x.id)}</span>`).join(", ");
+  const rows = [
+    ["Product", `<strong>${esc(c.product)}</strong>` +
+      (c.brand ? ` <span style="color:var(--muted)">${esc(c.brand)} · ${esc(c.cat)}</span>` : "")],
+    ...(c.serial ? [["Serial no.", `<span class="mono">${esc(c.serial)}</span>`]] : []),
+    ...(c.order ? [["Order no.", `<span class="mono">${esc(c.order)}</span>`]] : []),
+    ["Company", esc(c.company) || "—"],
+    ["Installer", esc(c.installer) || "—"],
+    ["Level", `${levelBars(c.level)} <span style="color:var(--muted)">${LEVELS[c.level] || ""}</span>`],
+    ["Duration", c.duration != null ? `${c.duration} min` : "—"],
+    ["First call", c.first ? "Yes" : `No — follows up on ${esc(c.related)}`],
+    ...(follows ? [["Followed by", esc(follows)]] : []),
+    ...(sameUnit.bySerial.length
+        ? [["Same unit", `${idList(sameUnit.bySerial)} <span style="color:var(--muted)">· same serial</span>`]] : []),
+    ...(sameUnit.byOrder.length
+        ? [["Same order", idList(sameUnit.byOrder)]] : []),
+    ["Outcome", `<span class="chip ${STATUS_CLASS[c.status] || "waiting"}">${esc(c.status)}</span>`],
+  ];
+
+  $("d-body").innerHTML =
+    rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("") +
+    (c.notes ? `<dt>Notes</dt><dd class="note">${esc(c.notes)}</dd>` : "");
+
+  // Editing someone else's case would mean writing their file. Nobody writes
+  // anyone else's file, so this is offered only for your own.
+  const mine = isMine(c);
+  $("d-edit").hidden = !mine;
+  $("d-note").hidden = mine;
+  if (!mine) $("d-note").textContent = `${c.by}'s case — ask them to change it`;
+
+  $("d-body").onclick = (e) => {
+    const j = e.target.closest("[data-jump]");
+    if (j) openDetail(j.dataset.jump);
+  };
+  $("d-edit").onclick = () => { $("detail").close(); loadIntoForm(c); };
+  $("d-followup").onclick = () => { $("detail").close(); startFollowUp(c); };
+  $("detail").showModal();
+}
+
+/* ---------- export ---------- */
+
+function exportCsv() {
+  if (!cases.length) { banner("form-banner", "warn", "There is nothing to export yet."); return; }
+  const headers = ["Case", "Date", "Logged by", "Fabrikat", "Kategori", "Product",
+                   "Serial no.", "Order no.", "Company", "Installer",
+                   "Level", "Minutes", "First call", "Follows up on", "Outcome", "Notes", "Saved at"];
+
+  // Semicolons and a BOM, so Swedish Excel opens it straight into columns.
+  const cell = (v) => {
+    const s = String(v == null ? "" : v);
+    return /[";\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const ordered = [...cases].sort((a, b) => String(a.at || "").localeCompare(String(b.at || "")));
+  const lines = [headers.join(";")];
+  for (const c of ordered) {
+    lines.push([c.id, c.date, c.by, c.brand || "", c.cat || "", c.product,
+                c.serial || "", c.order || "", c.company, c.installer, c.level,
+                c.duration != null ? c.duration : "", c.first ? "Yes" : "No",
+                c.related || "", c.status, c.notes, c.at].map(cell).join(";"));
+  }
+
+  const blob = new Blob(["\uFEFF" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `support-cases-${todayISO()}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  banner("form-banner", "info", `Exported ${cases.length} cases. Double-click the file to open it in Excel.`);
+}
+
+/* ---------- sign-in screen ---------- */
+
+function showGate(message) {
+  $("gate").hidden = false;
+  $("gate-status").className = "gate-status" + (message && message.bad ? " bad" : "");
+  $("gate-status").textContent = message ? message.text : "";
+
+  const ready = Boolean(dir);
+  $("gate-connect").hidden = ready;
+  $("gate-people").hidden = !ready;
+  $("gate-repo").textContent = dir ? dir.name : "no folder chosen";
+
+  if (!ready) {
+    $("gate-sub").textContent = "Where is the shared case log?";
+  } else {
+    $("who").innerHTML = people.map((p) =>
+      `<button type="button" data-slug="${esc(p.slug)}">${esc(p.name)}</button>`).join("");
+    $("gate-sub").textContent = people.length
+      ? "Who's using this?"
+      : "Nobody is set up yet — add the first name below.";
+  }
+  setTimeout(() => {
+    const el = !ready ? $("btn-pick") : ($("who").querySelector("button") || $("gate-new"));
+    if (el) el.focus();
+  }, 30);
+}
+
+function signIn(person) {
+  me = person;
+  try { sessionStorage.setItem(SS_USER, person.slug); } catch (e) {}
+  $("gate").hidden = true;
+  $("whoami").textContent = `/ ${person.name} · ${person.prefix}`;
+  clearForm();
+  restoreDraft();
+  remerge();
+  refreshLists();
+  renderCommon();
+  render();
+  showPane("new");
+  startPolling();
+  refresh(true);
+}
+
+function signOut() {
+  if (formHasContent() && !confirm("You have a case part-typed. Switch user anyway?")) return;
+  me = null;
+  try { sessionStorage.removeItem(SS_USER); } catch (e) {}
+  stopPolling();
+  clearForm();
+  $("whoami").textContent = "—";
+  showGate(null);
+}
+
+async function addPerson() {
+  const name = $("gate-new").value.trim();
+  if (!name) return;
+  if (!dir) { showGate({ bad: true, text: "Choose the shared folder first." }); return; }
+
+  const existing = people.find((p) => p.slug === slugify(name));
+  if (existing) { $("gate-new").value = ""; signIn(existing); return; }
+
+  $("gate-add-btn").disabled = true;
+  showGate({ text: `Adding ${name}…` });
+  try {
+    people = await readEveryone();            // someone may have been added meanwhile
+    const again = people.find((p) => p.slug === slugify(name));
+    if (again) { $("gate-new").value = ""; signIn(again); return; }
+
+    const person = {
+      slug: slugify(name),
+      name,
+      prefix: prefixFor(name, people.map((p) => p.prefix)),
+      cases: [],
+      products: [],
+      handle: null,
+    };
+    people.push(person);
+    me = person;
+    await writeMine();                        // claim the file straight away
+    $("gate-new").value = "";
+    signIn(person);
+  } catch (e) {
+    me = null;
+    showGate({ bad: true, text: `Could not write to the folder: ${e.message}` });
+  } finally {
+    $("gate-add-btn").disabled = false;
+  }
+}
+
+/* ---------- choosing / reconnecting the folder ---------- */
+
+async function chooseFolder() {
+  try {
+    showGate({ text: "Waiting for you to pick a folder…" });
+    await pickFolder();
+    people = await readEveryone();
+    remerge();
+    render();
+    setSync("ok", `read ${stamp()}`);
+    showGate(null);
+  } catch (e) {
+    if (e && e.name === "AbortError") { showGate(null); return; }
+    showGate({ bad: true, text: e.message });
+  }
+}
+
+async function reconnectFolder() {
+  try {
+    showGate({ text: "Waiting for permission…" });
+    await regrantFolder();
+    people = await readEveryone();
+    remerge();
+    render();
+    setSync("ok", `read ${stamp()}`);
+    resumeSession();
+  } catch (e) {
+    showGate({ bad: true, text: e.message });
+  }
+}
+
+function resumeSession() {
+  let slug = "";
+  try { slug = sessionStorage.getItem(SS_USER) || ""; } catch (e) {}
+  const person = slug && people.find((p) => p.slug === slug);
+  if (person) signIn(person);
+  else showGate(null);
+}
+
+/* ---------- folder dialog ---------- */
+
+function openSettings() {
+  $("s-folder").textContent = dir ? dir.name : "— none chosen —";
+  $("s-user").textContent = me ? me.name : "not signed in";
+  $("s-prefix").textContent = me ? `${me.prefix}-…` : "—";
+  $("s-people").textContent = people.length ? people.map((p) => p.name).join(", ") : "—";
+  banner("settings-banner", null, null);
+  $("settings").showModal();
+}
+
+async function changeFolder() {
+  $("settings").close();
+  me = null;
+  try { sessionStorage.removeItem(SS_USER); } catch (e) {}
+  stopPolling();
+  await chooseFolder();
+}
+
+async function forgetThisFolder() {
+  await forgetFolder();
+  dir = null; people = []; cases = []; me = null;
+  try { sessionStorage.removeItem(SS_USER); } catch (e) {}
+  stopPolling();
+  $("settings").close();
+  $("whoami").textContent = "—";
+  setSync("off", "no folder");
+  render();
+  showGate(null);
+}
+
+/* ---------- polling ---------- */
+
+function startPolling() {
+  stopPolling();
+  pollTimer = setInterval(() => {
+    if (document.visibilityState === "visible" && !$("btn-save").disabled) refresh(true);
+  }, POLL_MS);
+}
+function stopPolling() { if (pollTimer) clearInterval(pollTimer); pollTimer = null; }
+
+/* ---------- wiring ---------- */
+
+function init() {
+  buildMeter();
+  clearForm();
+
+  $("btn-today").onclick   = () => { $("f-date").value = todayISO(); };
+  $("btn-save").onclick    = save;
+  $("btn-clear").onclick   = clearForm;
+  $("btn-cancel-edit").onclick = clearForm;
+  $("btn-timer").onclick   = toggleTimer;
+  $("btn-timer-reset").onclick = resetTimer;
+  $("f-first").onchange    = () => { toggleRelated(); renderDupeHint(); };
+  $("btn-refresh").onclick = () => refresh();
+  $("btn-export").onclick  = exportCsv;
+  $("btn-settings").onclick = openSettings;
+  $("btn-switch").onclick  = signOut;
+  $("s-cancel").onclick    = () => $("settings").close();
+  $("s-change").onclick    = changeFolder;
+  $("s-forget").onclick    = forgetThisFolder;
+  $("d-close").onclick     = () => $("detail").close();
+
+  // ---- tabs ----
+  $("tab-new").onclick = () => showPane("new");
+  $("tab-log").onclick = () => showPane("log");
+
+  // ---- product picker ----
+  const prodInput = $("f-product");
+
+  prodInput.addEventListener("input", () => {
+    const q = prodInput.value;
+    if (picked && norm(picked.model) !== norm(q)) setPickedQuiet(null);
+    if (q.trim()) openMenu(q); else closeMenu();
+    saveDraft();
+  });
+
+  prodInput.addEventListener("focus", () => {
+    if (prodInput.value.trim() && !picked) openMenu(prodInput.value);
+  });
+
+  prodInput.addEventListener("keydown", (e) => {
+    const open = !$("prod-menu").hidden;
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      if (!open) { if (prodInput.value.trim()) openMenu(prodInput.value); return; }
+      e.preventDefault();
+      if (!menuItems.length) return;
+      menuIndex = (menuIndex + (e.key === "ArrowDown" ? 1 : -1) + menuItems.length) % menuItems.length;
+      paintMenu();
+    } else if (e.key === "Enter") {
+      if (open && menuIndex >= 0) { e.preventDefault(); chooseMenuItem(menuIndex); }
+    } else if (e.key === "Escape") {
+      if (open) { e.stopPropagation(); closeMenu(); }
+    }
+  });
+
+  $("prod-menu").addEventListener("mousedown", (e) => {
+    const item = e.target.closest(".menu-item");
+    if (item) { e.preventDefault(); chooseMenuItem(Number(item.dataset.i)); }
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".combo")) closeMenu();
+  });
+
+  $("common").addEventListener("click", (e) => {
+    const b = e.target.closest(".chip-btn");
+    if (!b) return;
+    const model = b.dataset.model;
+    const hit = allProducts().find((p) => norm(p.model) === norm(model));
+    if (hit) pickFromCatalog(hit);
+    else openAddProduct({ model });
+  });
+
+  let dupeTimer = null;
+  const scheduleDupeCheck = () => {
+    clearTimeout(dupeTimer);
+    dupeTimer = setTimeout(renderDupeHint, 250);
+  };
+  $("f-serial").addEventListener("input", scheduleDupeCheck);
+  $("f-order").addEventListener("input", scheduleDupeCheck);
+
+  $("dupe-hint").addEventListener("click", (e) => {
+    const open = e.target.closest("[data-open]");
+    if (open) { showPane("log"); openDetail(open.dataset.open); return; }
+    const link = e.target.closest("[data-link]");
+    if (link) {
+      $("f-first").checked = false;
+      toggleRelated();
+      $("f-related").value = link.dataset.link;
+      renderDupeHint();
+      banner("form-banner", "info", `Linked to case ${link.dataset.link}.`);
+    }
+  });
+
+  $("btn-browse").onclick = toggleBrowse;
+  $("btn-addprod").onclick = () => openAddProduct(null);
+
+  $("col-brand").addEventListener("click", (e) => {
+    const it = e.target.closest("[data-brand]");
+    if (!it) return;
+    browseBrand = it.dataset.brand;
+    const cats = catsFor(browseBrand);
+    browseCat = cats.length ? cats[0].name : null;
+    renderBrowser();
+  });
+  $("col-cat").addEventListener("click", (e) => {
+    const it = e.target.closest("[data-cat]");
+    if (!it) return;
+    browseCat = it.dataset.cat;
+    renderBrowser();
+  });
+  $("col-model").addEventListener("click", (e) => {
+    if (e.target.closest("[data-add]")) { openAddProduct({ brand: browseBrand, cat: browseCat }); return; }
+    const it = e.target.closest("[data-model]");
+    if (!it) return;
+    pickFromCatalog({ brand: browseBrand, cat: browseCat, model: it.dataset.model });
+    renderBrowser();
+  });
+
+  $("a-cancel").onclick = () => $("addprod").close();
+  $("a-save").onclick = saveNewProduct;
+  $("a-model").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); saveNewProduct(); }
+  });
+
+  $("gate-settings").onclick = openSettings;
+  $("gate-add-btn").onclick  = addPerson;
+  $("btn-pick").onclick      = () => (dir ? reconnectFolder() : chooseFolder());
+  $("gate-new").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); addPerson(); }
+  });
+  $("who").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-slug]");
+    if (b) {
+      const p = people.find((x) => x.slug === b.dataset.slug);
+      if (p) signIn(p);
+    }
+  });
+
+  let searchTimer = null;
+  $("q").addEventListener("input", () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(render, 180);
+  });
+
+  $("tbody").addEventListener("click", (e) => {
+    const tr = e.target.closest("tr");
+    if (tr) openDetail(tr.dataset.id);
+  });
+  $("tbody").addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      const tr = e.target.closest("tr");
+      if (tr) { e.preventDefault(); openDetail(tr.dataset.id); }
+    }
+  });
+
+  document.querySelectorAll(".pane-body input, .pane-body select, .pane-body textarea")
+    .forEach((el) => el.addEventListener("input", saveDraft));
+
+  document.addEventListener("keydown", (e) => {
+    if (!$("gate").hidden) return;
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") { e.preventDefault(); save(); }
+    else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "n") { e.preventDefault(); clearForm(); }
+    else if (e.key === "F5" && !e.ctrlKey) { e.preventDefault(); refresh(); }
+  });
+
+  window.addEventListener("beforeunload", (e) => {
+    if (me && formHasContent()) { e.preventDefault(); e.returnValue = ""; }
+  });
+
+  // Startup is async; expose when it has settled so tests can wait on the
+  // condition instead of guessing at a delay.
+  window.__booted = false;
+  boot().then(done, done);
+  function done() { window.__booted = true; }
+}
+
+async function boot() {
+  render();
+
+  if (!supported()) {
+    $("gate").hidden = false;
+    $("gate-connect").hidden = true;
+    $("gate-people").hidden = true;
+    $("gate-sub").textContent = "This browser can't open a shared folder.";
+    $("gate-status").className = "gate-status bad";
+    $("gate-status").textContent =
+      "Open this file in Microsoft Edge or Google Chrome. Firefox and Safari don't support writing to a folder yet.";
+    setSync("off", "unsupported browser");
+    return;
+  }
+
+  dir = await recallFolder();
+  if (!dir) { showGate(null); return; }
+
+  const perm = await folderPermission();
+  if (perm !== "granted") {
+    // Chrome deliberately requires a click before handing back folder access.
+    $("gate-connect").hidden = false;
+    $("btn-pick").textContent = "Open the shared folder";
+    showGate({ text: `Ready to open ${dir.name}. Click to continue.` });
+    $("gate-connect").hidden = false;
+    return;
+  }
+
+  try {
+    people = await readEveryone();
+    remerge();
+    refreshLists();
+    render();
+    setSync("ok", `read ${stamp()}`);
+    resumeSession();
+  } catch (e) {
+    setSync("error", "folder unreachable");
+    showGate({ bad: true, text: `Could not read ${dir.name} — is the network drive connected?` });
+  }
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", init);
+} else {
+  init();
+}
+
+// Exposed so the offline test harness can drive the app without a real folder.
+window.__caselog = {
+  get cases() { return cases; },
+  get people() { return people; },
+  get me() { return me; },
+  set dir(v) { dir = v; },
+  get dir() { return dir; },
+  slugify, prefixFor, readEveryone, writeMine, remerge, render, refresh,
+  boot, showGate, resumeSession, formHasContent,
+  allProducts, searchProducts, catsFor, modelsFor, showPane,
+  get picked() { return picked; },
+};
+
+</script>
+</body>
+</html>
