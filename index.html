@@ -241,6 +241,16 @@
   .chip-tag { background: #F3EEF7; border-color: #D6C7E2; color: #5B3D74; font-weight: 550; }
   .chip-tag i { font-style: normal; margin-left: 7px; opacity: .55; cursor: pointer; }
   .chip-tag i:hover { opacity: 1; color: var(--red); }
+  .report .pill { display: inline-block; background: #EEF3F6; border: 1px solid #C9DAE4;
+                  border-radius: 3px; padding: 1px 5px 1px 7px; margin: 0 4px 3px 0; }
+  .report .prodrow { display: block; margin-bottom: 5px; }
+  /* platshållartexter ska aldrig ligga i vägen för ett klick */
+  .report .empty, .report .body { pointer-events: none; }
+  .report .pill i, .report .tag i { pointer-events: auto; }
+  .report .pill, .report .tag { position: relative; z-index: 2; }
+  .report .pill i, .report .tag i { font-style: normal; margin-left: 6px; opacity: .55;
+                                    cursor: pointer; padding: 0 3px; }
+  .report .pill i:hover, .report .tag i:hover { opacity: 1; color: var(--red); }
   .report .tag { display: inline-block; background: #F3EEF7; border: 1px solid #D6C7E2;
                  color: #5B3D74; border-radius: 9px; padding: 0 7px; margin: 0 4px 3px 0;
                  font-size: 11px; }
@@ -1006,6 +1016,7 @@
 
       <!-- ---- the rest ---- -->
       <div class="block">
+        <div class="block-head"><h3>Våra nummer</h3></div>
         <div class="grid2">
           <label for="f-serial">Serienummer</label>
           <input type="text" id="f-serial" autocomplete="off" placeholder="om det finns">
@@ -1013,8 +1024,19 @@
           <label for="f-order">Ordernummer</label>
           <input type="text" id="f-order" autocomplete="off" placeholder="om det finns">
 
-          <div class="full" id="dupe-hint" hidden></div>
+          <label for="f-av">AV-nummer</label>
+          <input type="text" id="f-av" autocomplete="off" placeholder="om avvikelse registrerats">
 
+          <label for="f-avnote">Motivering</label>
+          <input type="text" id="f-avnote" autocomplete="off" placeholder="kort om avvikelsen">
+
+          <div class="full" id="dupe-hint" hidden></div>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="block-head"><h3>Ärendet</h3></div>
+        <div class="grid2">
           <label for="f-company">Företag</label>
           <div class="combo">
             <input type="text" id="f-company" autocomplete="off" spellcheck="false"
@@ -1078,6 +1100,10 @@
             <option>Eskalerat</option>
             <option>Väntar på kund</option>
           </select>
+
+          <label for="f-contact">Telefon/e-post</label>
+          <input type="text" id="f-contact" class="span" autocomplete="off"
+                 placeholder="så ni når personen igen">
 
           <label for="f-tags">Taggar</label>
           <div class="span">
@@ -1510,7 +1536,31 @@ function remerge() {
 const findCase = (id) => cases.find((c) => c.id === id);
 const isMine = (c) => Boolean(me && c && c.owner === me.slug);
 
-function nextId() {
+/* Löpnummer över hela loggen. Läser om mappen precis innan numret sätts, så
+   fönstret där två personer kan hamna på samma nummer blir så litet som möjligt
+   utan fillås. Dubbletter upptäcks vid inläsning och flaggas. */
+async function nextRunningNo() {
+  // Läs färskt utan att röra tillståndet — annars tappar `me` kopplingen till
+  // sitt eget objekt och det nyss sparade ärendet försvinner ur vyn.
+  let fresh = [];
+  try {
+    for (const p of await readEveryone()) fresh.push(...p.cases);
+  } catch (e) { /* kör på det vi redan har */ }
+  let max = 0;
+  for (const c of [...fresh, ...cases, ...(me ? me.cases : [])]) {
+    const m = String(c.id).match(/(\d+)\s*$/);
+    if (m) max = Math.max(max, Number(m[1]));
+  }
+  return String(max + 1).padStart(5, "0");
+}
+
+function duplicateIds() {
+  const seen = new Map();
+  for (const c of cases) seen.set(c.id, (seen.get(c.id) || 0) + 1);
+  return [...seen.entries()].filter(([, n]) => n > 1).map(([id]) => id);
+}
+
+function nextIdLegacy() {
   let n = 0;
   for (const c of me.cases) {
     const m = String(c.id).match(/-(\d+)$/);
@@ -1550,6 +1600,11 @@ async function refresh(quiet) {
       else people.push(me);           // our file isn't written until the first save
     }
     remerge();
+    const dupes = duplicateIds();
+    if (dupes.length) {
+      banner("form-banner", "warn",
+        `Två ärenden har fått samma nummer: ${dupes.join(", ")}. Öppna och ändra det ena.`);
+    }
     refreshLists();
     renderCommon();
     if (!$("browser").hidden) renderBrowser();
@@ -1579,7 +1634,7 @@ function matches(c, q) {
   if (!q) return true;
   const needle = q.toLowerCase();
   return [c.id, c.company, c.installer, ...allCaseProducts(c), c.brand, c.serial, c.order,
-          c.notes, c.by, c.status, ...(c.tags || [])]
+          c.notes, c.by, c.status, c.contact, c.av, c.avnote, ...(c.tags || [])]
     .some((v) => String(v || "").toLowerCase().includes(needle));
 }
 
@@ -2521,7 +2576,8 @@ function renderReport() {
   // för den som är vald just nu.
   const onCase = [...extras, ...(picked ? [picked] : [])];
   const prod = onCase.length
-    ? `<strong>${onCase.map((x) => esc(x.model)).join(", ")}</strong>` +
+    ? onCase.map((x) => `<span class="pill"><strong>${esc(x.model)}</strong>` +
+        `<i data-rmprod="${esc(x.model)}" title="Ta bort från ärendet">×</i></span>`).join(" ") +
       (picked && !picked.free
         ? `<br><span style="color:var(--muted)">${esc(picked.brand)} · ${esc(picked.cat)}</span>` : "")
     : '<span class="v empty">ingen produkt vald</span>';
@@ -2553,11 +2609,20 @@ function renderReport() {
 
     <div class="band">
       <div class="cell" style="flex:1">
-        <div class="line">${prod}</div>
+        <div class="prodrow">${prod}</div>
         <div class="line">
+          ${$("f-av").value.trim() ? `<span class="k">AV</span> ${esc($("f-av").value.trim())}<br>` : ""}
           <span class="k">Serienr</span> ${serial ? esc(serial) : "—"}
           &nbsp;<span class="k">Ordernr</span> ${order ? esc(order) : "—"}
         </div>
+        ${tags.length ? `<div class="line" style="margin-top:6px">
+          <span class="k">Taggar</span>
+          <div class="v">${tags.map((t) =>
+            `<span class="tag">${esc(t)}<i data-rmtag="${esc(t)}" title="Ta bort">×</i></span>`
+          ).join("")}</div></div>` : ""}
+        ${$("f-contact").value.trim() ? `<div class="line" style="margin-top:6px">
+          <span class="k">Kontakt</span>
+          <span class="v">${esc($("f-contact").value.trim())}</span></div>` : ""}
         <div class="line" style="margin-top:6px">
           <span class="k">Ärendebeskrivning</span>
           <div class="body">${$("f-notes").value.trim()
@@ -2638,6 +2703,8 @@ function printCase(c) {
       ${line("Produkt", [c.brand, c.cat, c.product].filter(Boolean).join(" – "))}
       ${line("Fler produkter", (c.extras || []).map((x) => x.model).join(", "))}
       ${line("Taggar", (c.tags || []).join(", "))}
+      ${line("Telefon/e-post", c.contact)}
+      ${line("AV-nummer", [c.av, c.avnote].filter(Boolean).join(" — "))}
       ${line("Serienummer", c.serial)}
       ${line("Ordernummer", c.order)}
       ${line("Teknikernivå", LEVELS[c.level] || "")}
@@ -2722,6 +2789,17 @@ function addAnotherProduct() {
   if (typeof renderReport === "function") renderReport();
   banner("form-banner", "info", `${added.model} tillagd. Välj nästa produkt.`);
   $("f-product").focus();
+}
+
+/** Tar bort en produkt från ärendet. Är det huvudprodukten kliver nästa upp. */
+function removeProductFromCase(model) {
+  if (picked && norm(picked.model) === norm(model)) {
+    setPicked(extras.length ? extras.shift() : null);
+  } else {
+    extras = extras.filter((x) => norm(x.model) !== norm(model));
+  }
+  renderExtras();
+  renderReport();
 }
 
 const allCaseProducts = (c) =>
@@ -2829,6 +2907,8 @@ function clearForm() {
   tags = [];
   $("f-tags").value = "";
   renderTags();
+  $("f-contact").value = "";
+  $("f-av").value = ""; $("f-avnote").value = "";
   $("f-serial").value = "";
   $("f-order").value = "";
   $("f-company").value = "";
@@ -2919,6 +2999,9 @@ function collect() {
     brand: picked.free ? "" : picked.brand,
     cat: picked.free ? "" : picked.cat,
     tags: tags.slice(),
+    contact: $("f-contact").value.trim(),
+    av: $("f-av").value.trim(),
+    avnote: $("f-avnote").value.trim(),
     extras: extras.map((p) => ({ brand: p.brand || "", cat: p.cat || "", model: p.model })),
     serial: $("f-serial").value.trim(),
     order: $("f-order").value.trim(),
@@ -2952,7 +3035,7 @@ async function save() {
       Object.assign(existing, record, { id: editingId, at: existing.at });
       savedId = editingId;
     } else {
-      savedId = nextId();
+      savedId = await nextRunningNo();
       me.cases.push({ ...record, id: savedId });
     }
     await writeMine();
@@ -2992,6 +3075,8 @@ function loadIntoForm(c) {
   renderExtras();
   tags = (c.tags || []).slice();
   renderTags();
+  $("f-contact").value = c.contact || "";
+  $("f-av").value = c.av || ""; $("f-avnote").value = c.avnote || "";
   $("f-serial").value = c.serial || "";
   $("f-order").value = c.order || "";
   $("f-company").value = c.company || "";
@@ -3098,6 +3183,9 @@ function openDetail(id) {
         ? [["Fler produkter", esc(c.extras.map((x) => x.model).join(", "))]] : []),
     ...((c.tags || []).length
         ? [["Taggar", c.tags.map((t) => `<span class="chip ${""}" style="background:#F3EEF7;border-color:#D6C7E2;color:#5B3D74">${esc(t)}</span>`).join(" ")]] : []),
+    ...(c.contact ? [["Telefon/e-post", esc(c.contact)]] : []),
+    ...(c.av ? [["AV-nummer", `<span class="mono">${esc(c.av)}</span>` +
+        (c.avnote ? ` <span style="color:var(--muted)">${esc(c.avnote)}</span>` : "")]] : []),
     ...(c.serial ? [["Serienummer", `<span class="mono">${esc(c.serial)}</span>`]] : []),
     ...(c.order ? [["Ordernummer", `<span class="mono">${esc(c.order)}</span>`]] : []),
     ["Företag", esc(c.company) || "—"],
@@ -3139,7 +3227,8 @@ function openDetail(id) {
 function exportCsv() {
   if (!cases.length) { banner("form-banner", "warn", "Det finns inget att exportera ännu."); return; }
   const headers = ["Ärende", "Datum", "Loggat av", "Fabrikat", "Kategori", "Produkt",
-                   "Fler produkter", "Taggar", "Serienummer", "Ordernummer", "Företag", "Montör",
+                   "Fler produkter", "Taggar", "Telefon/e-post", "AV-nummer", "AV-motivering",
+                   "Serienummer", "Ordernummer", "Företag", "Montör",
                    "Teknikernivå", "Tid", "Sekunder", "Första samtalet", "Uppföljning på",
                    "Resultat", "Anteckningar", "Sparat"];
 
@@ -3153,7 +3242,7 @@ function exportCsv() {
   for (const c of ordered) {
     lines.push([c.id, c.date, c.by, c.brand || "", c.cat || "", c.product,
                 (c.extras || []).map((x) => x.model).join(" | "),
-                (c.tags || []).join(" | "),
+                (c.tags || []).join(" | "), c.contact || "", c.av || "", c.avnote || "",
                 c.serial || "", c.order || "", c.company, c.installer, c.level,
                 fmtTime(secondsOf(c)), secondsOf(c), c.first ? "Ja" : "Nej",
                 c.related || "", statusOf(c), c.notes, c.at].map(cell).join(";"));
@@ -3447,6 +3536,15 @@ function init() {
   $("btn-browse").onclick = toggleBrowse;
   $("btn-addprod").onclick = () => openAddProduct(null);
   $("btn-more").onclick = addAnotherProduct;
+  $("report").addEventListener("click", (e) => {
+    const rp = e.target.closest("[data-rmprod]");
+    if (rp) { removeProductFromCase(rp.dataset.rmprod); return; }
+    const rt = e.target.closest("[data-rmtag]");
+    if (rt) {
+      tags = tags.filter((t) => t !== rt.dataset.rmtag);
+      renderTags(); renderReport();
+    }
+  });
   attachCombo("f-tags", "tag-menu", allTags);
   $("f-tags").addEventListener("keydown", (e) => {
     if (e.key !== "Enter" || !$("tag-menu").hidden) return;
@@ -3562,6 +3660,20 @@ function init() {
   attachCombo("f-installer", "installer-menu", allInstallers);
   attachCombo("a-brand", "brand-menu", () => brandsInUse().map((b) => b.name));
   attachCombo("a-cat", "cat-menu", allCategories);
+  // Samma kund brukar ha samma kontaktperson — föreslå den, men skriv aldrig
+  // över något som redan står i fältet.
+  $("f-company").addEventListener("change", () => {
+    const co = $("f-company").value.trim();
+    if (!co) return;
+    const prev = cases.filter((c) => norm(c.company) === norm(co))
+      .sort((a, b) => String(b.at || "").localeCompare(String(a.at || "")))[0];
+    if (!prev) return;
+    if (!$("f-installer").value.trim() && prev.installer) $("f-installer").value = prev.installer;
+    if (!$("f-contact").value.trim() && prev.contact) $("f-contact").value = prev.contact;
+    if (prev.role) $("f-role").value = prev.role;
+    renderReport();
+  });
+
   $("btn-addcompany").onclick = () => registerName("companies", $("f-company").value, "företagsnamn");
 
   $("gate-settings").onclick = openSettings;
