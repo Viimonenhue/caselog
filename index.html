@@ -1644,7 +1644,8 @@ function render() {
 
   $("tbody").innerHTML = rows.map((c) => `
     <tr data-id="${esc(c.id)}" class="${selected === c.id ? "sel" : ""}" tabindex="0">
-      <td class="case">${esc(c.id)}${c.related ? `<br><span class="link-ref">↳${esc(c.related)}</span>` : ""}</td>
+      <td class="case">${esc(c.id)}${uLabel(c) ? ` <span class="link-ref">${uLabel(c)}</span>` : ""}${
+        c.related ? `<br><span class="link-ref">↳${esc(c.related)}</span>` : ""}</td>
       <td class="date">${esc(c.date)}</td>
       <td class="trunc">${esc(c.company)}</td>
       <td class="trunc">${esc(c.product)}${
@@ -1653,7 +1654,9 @@ function render() {
       <td class="trunc">${esc(c.installer)}</td>
       <td>${levelBars(c.level)}</td>
       <td class="num">${secondsOf(c) ? fmtTime(secondsOf(c)) : ""}</td>
-      <td><span class="chip ${STATUS_CLASS[c.status] || "waiting"}">${esc(c.status)}</span></td>
+      <td><span class="chip ${STATUS_CLASS[statusOf(c)] || "waiting"}">${esc(statusOf(c))}</span>${
+        needsFollowUp(c) && isFollowedUp(c)
+          ? ' <span class="chip resolved">Uppföljt</span>' : ""}</td>
       <td class="trunc">${esc(c.by)}</td>
     </tr>`).join("");
 
@@ -2188,6 +2191,34 @@ function identifierMatches(serial, order, excludeId) {
 }
 
 /** Where a follow-up should point: the first call in that thread. */
+/* ---------- uppföljningskedjor ---------- */
+
+/* "Uppföljt" räknas fram, det skrivs aldrig till originalärendet. Originalet
+   kan ligga i en kollegas fil, och ingen skriver i någon annans fil. Bonus:
+   det gäller retroaktivt och stämmer alltid med vad som faktiskt finns. */
+function followUpsOf(id) {
+  return cases.filter((x) => x.related === id)
+    .sort((a, b) => String(a.at || "").localeCompare(String(b.at || "")));
+}
+
+/** U1, U2, U3 … efter ordningen de loggades i. Tom sträng för originalet. */
+function uLabel(c) {
+  if (!c || c.first || !c.related) return "";
+  const i = followUpsOf(c.related).findIndex((x) => x.id === c.id);
+  return i >= 0 ? `U${i + 1}` : "U";
+}
+
+const OPEN_STATES = ["Uppföljning behövs", "Eskalerat", "Väntar på kund"];
+const isFollowedUp = (c) => followUpsOf(c.id).length > 0;
+const needsFollowUp = (c) => OPEN_STATES.includes(statusOf(c));
+
+/** AV-numret märks med vilken uppföljning det gäller: AV12345 (U3) */
+function avLabel(c) {
+  if (!c || !c.av) return "";
+  const u = uLabel(c);
+  return u ? `${c.av} (${u})` : c.av;
+}
+
 function originOf(c) {
   return (!c.first && c.related) ? c.related : c.id;
 }
@@ -2696,7 +2727,8 @@ function printCase(c) {
   const line = (k, v) => v ? `<div class="row"><span class="k">${k}</span><span>${esc(v)}</span></div>` : "";
 
   $("printarea").innerHTML =
-    prHead(`Ärende ${c.id}`, `${c.date} · loggat av ${c.by}`) +
+    prHead(`Ärende ${c.id}${uLabel(c) ? " · " + uLabel(c) : ""}`,
+           `${c.date} · loggat av ${c.by}`) +
     `<div class="pr-case">
       ${line("Kund", c.company)}
       ${line("Kontakt", [c.installer, c.role].filter(Boolean).join(" · "))}
@@ -2704,7 +2736,7 @@ function printCase(c) {
       ${line("Fler produkter", (c.extras || []).map((x) => x.model).join(", "))}
       ${line("Taggar", (c.tags || []).join(", "))}
       ${line("Telefon/e-post", c.contact)}
-      ${line("AV-nummer", [c.av, c.avnote].filter(Boolean).join(" — "))}
+      ${line("AV-nummer", [avLabel(c), c.avnote].filter(Boolean).join(" — "))}
       ${line("Serienummer", c.serial)}
       ${line("Ordernummer", c.order)}
       ${line("Teknikernivå", LEVELS[c.level] || "")}
@@ -3169,10 +3201,10 @@ function openDetail(id) {
   selected = id;
   render();
 
-  $("d-title").textContent = `Ärende ${c.id}`;
+  $("d-title").textContent = `Ärende ${c.id}${uLabel(c) ? " · " + uLabel(c) : ""}`;
   $("d-sub").textContent = `${c.date} · loggat av ${c.by}`;
 
-  const follows = cases.filter((x) => x.related === c.id).map((x) => x.id).join(", ");
+  const follows = followUpsOf(c.id).map((x) => `${x.id} (${uLabel(x)})`).join(", ");
   const sameUnit = identifierMatches(c.serial, c.order, c.id);
   const idList = (arr) => arr.map((x) =>
     `<span class="link-ref" style="cursor:pointer" data-jump="${esc(x.id)}">${esc(x.id)}</span>`).join(", ");
@@ -3184,7 +3216,9 @@ function openDetail(id) {
     ...((c.tags || []).length
         ? [["Taggar", c.tags.map((t) => `<span class="chip ${""}" style="background:#F3EEF7;border-color:#D6C7E2;color:#5B3D74">${esc(t)}</span>`).join(" ")]] : []),
     ...(c.contact ? [["Telefon/e-post", esc(c.contact)]] : []),
-    ...(c.av ? [["AV-nummer", `<span class="mono">${esc(c.av)}</span>` +
+    ...(needsFollowUp(c) && isFollowedUp(c)
+        ? [["Uppföljt", `<span class="chip resolved">Ja — ${followUpsOf(c.id).length} st</span>`]] : []),
+    ...(c.av ? [["AV-nummer", `<span class="mono">${esc(avLabel(c))}</span>` +
         (c.avnote ? ` <span style="color:var(--muted)">${esc(c.avnote)}</span>` : "")]] : []),
     ...(c.serial ? [["Serienummer", `<span class="mono">${esc(c.serial)}</span>`]] : []),
     ...(c.order ? [["Ordernummer", `<span class="mono">${esc(c.order)}</span>`]] : []),
@@ -3228,7 +3262,7 @@ function exportCsv() {
   if (!cases.length) { banner("form-banner", "warn", "Det finns inget att exportera ännu."); return; }
   const headers = ["Ärende", "Datum", "Loggat av", "Fabrikat", "Kategori", "Produkt",
                    "Fler produkter", "Taggar", "Telefon/e-post", "AV-nummer", "AV-motivering",
-                   "Serienummer", "Ordernummer", "Företag", "Montör",
+                   "Uppföljning", "Uppföljt", "Serienummer", "Ordernummer", "Företag", "Montör",
                    "Teknikernivå", "Tid", "Sekunder", "Första samtalet", "Uppföljning på",
                    "Resultat", "Anteckningar", "Sparat"];
 
@@ -3242,7 +3276,8 @@ function exportCsv() {
   for (const c of ordered) {
     lines.push([c.id, c.date, c.by, c.brand || "", c.cat || "", c.product,
                 (c.extras || []).map((x) => x.model).join(" | "),
-                (c.tags || []).join(" | "), c.contact || "", c.av || "", c.avnote || "",
+                (c.tags || []).join(" | "), c.contact || "", avLabel(c), c.avnote || "",
+                uLabel(c), (needsFollowUp(c) && isFollowedUp(c)) ? "Ja" : "",
                 c.serial || "", c.order || "", c.company, c.installer, c.level,
                 fmtTime(secondsOf(c)), secondsOf(c), c.first ? "Ja" : "Nej",
                 c.related || "", statusOf(c), c.notes, c.at].map(cell).join(";"));
@@ -3793,7 +3828,7 @@ window.__caselog = {
   slugify, prefixFor, readEveryone, writeMine, remerge, render, refresh,
   boot, showGate, resumeSession, formHasContent,
   allProducts, searchProducts, catsFor, modelsFor, showPane, allCategories,
-  allCompanies, allInstallers, registerName,
+  allCompanies, allInstallers, registerName, followUpsOf, uLabel, isFollowedUp, avLabel,
   brandsInUse, secondsOf, fmtTime, casesInPeriod, renderStats,
   set period(v) { period = v; }, get period() { return period; },
   get picked() { return picked; },
