@@ -439,7 +439,8 @@
   /* ---------- rapportpanel ---------- */
 
   .worksplit { flex: 1; display: flex; min-height: 0; overflow: hidden; }
-  .worksplit > .form-wrap { flex: 1; max-width: none; }
+  .worksplit > .form-wrap { flex: 1; max-width: none; min-width: 0; min-height: 0; }
+  .worksplit > * { min-height: 0; }
   .reportcol {
     width: 370px; flex: none;
     border-left: 1px solid var(--line-hi);
@@ -469,7 +470,7 @@
   .rep .body { white-space: pre-wrap; min-height: 46px; }
 
   @media (max-width: 1180px) {
-    .worksplit { display: block; overflow: visible; }
+    .worksplit { display: block; overflow: visible; min-height: 0; }
     .reportcol { width: auto; border-left: 0; border-top: 1px solid var(--line-hi); }
   }
 
@@ -898,7 +899,7 @@
   .kv dd { margin: 0; }
   .kv dd.note { white-space: pre-wrap; }
 
-  @media (max-width: 1000px) {
+  @media (max-width: 1180px) {
     html, body { height: auto; }
     body { display: block; overflow: visible; }
     .bar { position: sticky; top: 0; z-index: 5; }
@@ -1046,6 +1047,8 @@
           </div>
 
           <label for="f-role" style="text-align:right">
+            <input type="text" id="f-role-other" hidden autocomplete="off"
+                   placeholder="vad då?" style="width:100%;font-size:12.5px;padding:3px 4px;margin-bottom:3px">
             <select id="f-role" style="width:100%;font-size:12.5px;padding:3px 4px">
               <option>Montör</option>
               <option>Säljare</option>
@@ -1099,7 +1102,10 @@
             <option>Uppföljning behövs</option>
             <option>Eskalerat</option>
             <option>Väntar på kund</option>
+            <option>Övrigt</option>
           </select>
+          <input type="text" id="f-status-other" class="span" hidden autocomplete="off"
+                 placeholder="beskriv resultatet kort">
 
           <label for="f-contact">Telefon/e-post</label>
           <input type="text" id="f-contact" class="span" autocomplete="off"
@@ -1634,7 +1640,7 @@ function matches(c, q) {
   if (!q) return true;
   const needle = q.toLowerCase();
   return [c.id, c.company, c.installer, ...allCaseProducts(c), c.brand, c.serial, c.order,
-          c.notes, c.by, c.status, c.contact, c.av, c.avnote, ...(c.tags || [])]
+          c.notes, c.by, c.status, c.role, c.contact, c.av, c.avnote, ...(c.tags || [])]
     .some((v) => String(v || "").toLowerCase().includes(needle));
 }
 
@@ -2191,6 +2197,39 @@ function identifierMatches(serial, order, excludeId) {
 }
 
 /** Where a follow-up should point: the first call in that thread. */
+/* ---------- fritext vid "Annat" och "Övrigt" ---------- */
+
+/* Fritexten läggs ihop med valet till ett enda värde, t.ex.
+   "Annat — vaktmästare". Då behöver ingenting annat i programmet veta om att
+   fältet finns: sökning, rapport, PDF, export och statistik fungerar direkt. */
+const OTHER_WORDS = ["annat", "övrigt"];
+const isOther = (v) => OTHER_WORDS.includes(String(v || "").split("—")[0].trim().toLowerCase());
+
+function mergeOther(selectId, inputId) {
+  const base = $(selectId).value;
+  const extra = $(inputId).value.trim();
+  return isOther(base) && extra ? `${base} — ${extra}` : base;
+}
+
+/** Delar upp "Annat — vaktmästare" i valet och fritexten igen. */
+function splitOther(value, selectId, inputId, fallback) {
+  const raw = String(value || fallback || "");
+  const dash = raw.indexOf("—");
+  const base = dash >= 0 ? raw.slice(0, dash).trim() : raw;
+  const extra = dash >= 0 ? raw.slice(dash + 1).trim() : "";
+  const sel = $(selectId);
+  const known = [...sel.options].some((o) => o.value === base);
+  sel.value = known ? base : fallback;
+  $(inputId).value = extra;
+  toggleOther(selectId, inputId);
+}
+
+function toggleOther(selectId, inputId) {
+  const on = isOther($(selectId).value);
+  $(inputId).hidden = !on;
+  if (!on) $(inputId).value = "";
+}
+
 /* ---------- uppföljningskedjor ---------- */
 
 /* "Uppföljt" räknas fram, det skrivs aldrig till originalärendet. Originalet
@@ -2627,7 +2666,7 @@ function renderReport() {
         <div class="line"><span class="k">Support</span><br>${val(me ? me.name : "", "inte inloggad")}</div>
         <div class="line"><span class="k">Kund</span><br>${val($("f-company").value, "inget företag")}</div>
         <div class="line">${val($("f-installer").value, "ingen kontaktperson")}
-          <span style="color:var(--muted);font-weight:400">· ${esc($("f-role").value)}</span></div>
+          <span style="color:var(--muted);font-weight:400">· ${esc(mergeOther("f-role", "f-role-other"))}</span></div>
       </div>
       <div class="cell">
         <div class="line"><span class="k">Datum</span><br><span class="v">${esc($("f-date").value)}</span></div>
@@ -2965,6 +3004,8 @@ function clearForm() {
   $("f-company").value = "";
   $("f-installer").value = "";
   $("f-role").value = "Montör";
+  toggleOther("f-role", "f-role-other");
+  toggleOther("f-status", "f-status-other");
   setLevel(3);
   setHMS(0);
   $("f-first").checked = true;
@@ -3059,12 +3100,12 @@ function collect() {
     order: $("f-order").value.trim(),
     company: $("f-company").value.trim(),
     installer: $("f-installer").value.trim(),
-    role: $("f-role").value,
+    role: mergeOther("f-role", "f-role-other"),
     level,
     seconds,
     first,
     related,
-    status: $("f-status").value,
+    status: mergeOther("f-status", "f-status-other"),
     notes: $("f-notes").value.trim(),
     at: new Date().toISOString(),
   };
@@ -3133,12 +3174,12 @@ function loadIntoForm(c) {
   $("f-order").value = c.order || "";
   $("f-company").value = c.company || "";
   $("f-installer").value = c.installer || "";
-  $("f-role").value = c.role || "Montör";
+  splitOther(c.role, "f-role", "f-role-other", "Montör");
   setLevel(c.level || 3);
   setHMS(secondsOf(c));
   $("f-first").checked = !!c.first;
   $("f-related").value = c.related || "";
-  $("f-status").value = statusOf(c) || STATUS_DONE;
+  splitOther(statusOf(c), "f-status", "f-status-other", STATUS_DONE);
   $("f-notes").value = c.notes || "";
   toggleRelated();
   resetTimer();
@@ -3207,7 +3248,7 @@ function restoreDraft() {
   $("f-h").value = d.h || ""; $("f-m").value = d.m || ""; $("f-s").value = d.sec || "";
   $("f-first").checked = d.first !== false;
   $("f-related").value = d.related || "";
-  $("f-status").value = d.status || STATUS_DONE;
+  splitOther(d.status, "f-status", "f-status-other", STATUS_DONE);
   $("f-notes").value = d.notes || "";
   toggleRelated();
   banner("form-banner", "info", "Återställde det du hade skrivit innan fönstret stängdes.");
@@ -3496,6 +3537,14 @@ function init() {
 
   $("btn-today").onclick   = () => { $("f-date").value = todayISO(); dateTouched = false; };
   $("f-date").addEventListener("change", () => { dateTouched = true; });
+  for (const [sel, inp] of [["f-role", "f-role-other"], ["f-status", "f-status-other"]]) {
+    $(sel).addEventListener("change", () => {
+      toggleOther(sel, inp);
+      if (!$(inp).hidden) $(inp).focus();
+      renderReport();
+    });
+    $(inp).addEventListener("input", renderReport);
+  }
 
   // Kolla dygnsbytet när fönstret kommer tillbaka, när man börjar skriva och
   // en gång i minuten för den som sitter kvar hela natten.
@@ -3737,7 +3786,7 @@ function init() {
     if (!prev) return;
     if (!$("f-installer").value.trim() && prev.installer) $("f-installer").value = prev.installer;
     if (!$("f-contact").value.trim() && prev.contact) $("f-contact").value = prev.contact;
-    if (prev.role) $("f-role").value = prev.role;
+    if (prev.role) splitOther(prev.role, "f-role", "f-role-other", "Montör");
     renderReport();
   });
 
