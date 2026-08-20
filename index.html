@@ -2929,6 +2929,25 @@ function getHMS() {
 
 const hmsEmpty = () => !$("f-h").value.trim() && !$("f-m").value.trim() && !$("f-s").value.trim();
 
+/* Sätts så fort någon rör datumfältet själv. Då ska det aldrig skrivas över —
+   man backdaterar ibland med flit. */
+let dateTouched = false;
+
+/**
+ * Håller datumet färskt utan att ladda om sidan. Ett påbörjat ärende som ligger
+ * över midnatt fick annars gårdagens datum, vilket ställde till det i
+ * statistiken eftersom den räknar på datumfältet.
+ */
+function keepDateFresh() {
+  if (dateTouched || editingId != null) return;
+  const today = todayISO();
+  if ($("f-date").value === today) return;
+  const was = $("f-date").value;
+  $("f-date").value = today;
+  renderReport();
+  if (was) banner("form-banner", "info", `Datumet uppdaterat från ${was} till ${today}.`);
+}
+
 function clearForm() {
   editingId = null;
   $("f-date").value = todayISO();
@@ -2960,6 +2979,7 @@ function clearForm() {
   $("editing-flag").hidden = true;
   $("btn-cancel-edit").hidden = true;
   banner("form-banner", null, null);
+  dateTouched = false;
   clearDraft();
   $("f-product").focus();
 }
@@ -3474,7 +3494,19 @@ function init() {
   clearForm();
   renderReport();
 
-  $("btn-today").onclick   = () => { $("f-date").value = todayISO(); };
+  $("btn-today").onclick   = () => { $("f-date").value = todayISO(); dateTouched = false; };
+  $("f-date").addEventListener("change", () => { dateTouched = true; });
+
+  // Kolla dygnsbytet när fönstret kommer tillbaka, när man börjar skriva och
+  // en gång i minuten för den som sitter kvar hela natten.
+  window.addEventListener("focus", keepDateFresh);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") keepDateFresh();
+  });
+  $("pane-new").addEventListener("input", (e) => {
+    if (e.target.id !== "f-date") keepDateFresh();
+  });
+  setInterval(keepDateFresh, 60000);
   $("btn-save").onclick    = save;
   $("btn-clear").onclick   = clearForm;
   $("btn-cancel-edit").onclick = clearForm;
